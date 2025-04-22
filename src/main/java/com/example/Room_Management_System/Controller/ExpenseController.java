@@ -6,6 +6,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("expences")
 public class ExpenseController {
@@ -15,11 +17,10 @@ public class ExpenseController {
     @PostMapping("addExpense")
     public ResponseEntity addExpense(
             @RequestBody Expense expense,
-            @RequestParam("userId") String userId,
-            @RequestParam("roomId") String roomId
+            @RequestParam("userId") String userId
     ) {
         try {
-            Expense savedExpense = expenseService.addExpense(expense,userId,roomId);
+            Expense savedExpense = expenseService.addExpense(expense,userId);
             return new ResponseEntity<>(savedExpense, HttpStatus.CREATED);
         } catch (RuntimeException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
@@ -35,16 +36,16 @@ public class ExpenseController {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
         }
     }
-//
-//    @GetMapping("/user/{userId}")
-//    public ResponseEntity<List<Expense>> getUserExpenses(@PathVariable String userId) {
-//        try {
-//            List<Expense> expenses = expenseService.getUserExpenses(userId);
-//            return new ResponseEntity<>(expenses, HttpStatus.OK);
-//        } catch (RuntimeException e) {
-//            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
-//        }
-//    }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity getUserExpenses(@PathVariable String userId) {
+        try {
+            List<Expense> expenses = expenseService.getUserExpenses(userId);
+            return new ResponseEntity<>(expenses, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+        }
+    }
 //
 //    @GetMapping("/room/{roomId}")
 //    public ResponseEntity<List<Expense>> getRoomExpenses(@PathVariable String roomId) {
@@ -66,25 +67,35 @@ public class ExpenseController {
 //        }
 //    }
 //
-//    @PutMapping("/{id}")
-//    public ResponseEntity<Expense> updateExpense(@PathVariable String id, @RequestBody Expense expense) {
-//        try {
-//            Expense updatedExpense = expenseService.updateExpense(expense, id);
-//            return new ResponseEntity<>(updatedExpense, HttpStatus.OK);
-//        } catch (RuntimeException e) {
-//            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
-//        }
-//    }
-//
-//    @DeleteMapping("/{id}")
-//    public ResponseEntity<Void> deleteExpense(@PathVariable String id) {
-//        try {
-//            expenseService.deleteExpense(id);
-//            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-//        } catch (RuntimeException e) {
-//            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-//        }
-//    }
+    @PutMapping("/{id}")
+    public ResponseEntity updateExpense(@PathVariable String id, @RequestBody Expense expense) {
+        try {
+            Expense updatedExpense = expenseService.updateExpense(expense, id);
+            return new ResponseEntity<>(updatedExpense, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity deleteExpense(@PathVariable String id) {
+        try {
+            String deletedExpense =  expenseService.deleteExpense(id);
+            return new ResponseEntity<>(deletedExpense,HttpStatus.GONE);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @DeleteMapping("/deleteAllExpenses")
+    public ResponseEntity deleteAllExpense() {
+        try {
+            String deletedExpense =  expenseService.deleteAllExpense();
+            return new ResponseEntity<>(deletedExpense,HttpStatus.GONE);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
 //
 //    @GetMapping("/stats/{roomId}")
 //    public ResponseEntity<ExpenseStats> getExpenseStats(@PathVariable String roomId) {

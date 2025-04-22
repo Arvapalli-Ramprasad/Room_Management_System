@@ -55,4 +55,15 @@ public class UserController {
             return new ResponseEntity<>("cannot update the field", HttpStatus.BAD_REQUEST);
         }
     }
+
+    @DeleteMapping("/deleteAllUser")
+    public ResponseEntity deleteAllUsers(){
+        try{
+            String response  = userService.deleteAllUsers();
+            return new ResponseEntity<>(response,HttpStatus.OK);
+        }catch(Exception e){
+            return new ResponseEntity<>(e.getMessage(),HttpStatus.BAD_REQUEST);
+        }
+
+    }
 }

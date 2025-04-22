@@ -54,4 +54,15 @@ public class RoomController {
             return new ResponseEntity<>("cannot update the field", HttpStatus.BAD_REQUEST);
         }
     }
+
+    @DeleteMapping("/deleteAllRooms")
+    public ResponseEntity deleteAllRooms(){
+        try{
+            String response = roomService.deleteAllRoom();
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }catch (Exception e){
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
 }

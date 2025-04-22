@@ -8,7 +8,6 @@ import com.example.Room_Management_System.Repository.RoomRepository;
 import com.example.Room_Management_System.Repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -28,18 +27,23 @@ public class ExpenseService {
     @Autowired
     private RoomRepository roomRepository;
 
-    public Expense addExpense(Expense expense, String userId, String roomId) {
+    public Expense addExpense(Expense expense, String userId) {
         // 1. Validate mandatory fields
-        expense.setDate(LocalDate.now());
+
+        Optional<User> userOpt = userRepository.findById(userId);
+        if (!userOpt.isPresent()) {
+            throw new RuntimeException("User not found");
+        }
+
         expense.setUserId(userId);
-        expense.setRoomId(roomId);
+        expense.setUserName(userOpt.get().getName());
+        expense.setDate(LocalDate.now());
+
+        expense.setRoomId(userOpt.get().getRoomId());
         String validationError = validateExpense(expense);
         if (validationError != null) {
             throw new RuntimeException("Mandatory fields are missing: " + validationError);
         }
-
-        // 2. Validate relationships
-        validateRelationships(expense);
 
         // 3. Generate ID if not provided
         if (expense.getId() == null) {
@@ -52,6 +56,11 @@ public class ExpenseService {
         }
         expense.setUpdatedAt(LocalDateTime.now());
 
+        Room room = roomRepository.findById(userOpt.get().getRoomId()).get();
+
+        paymentCalculation(room,expense);
+
+
         // 5. Save the expense
         Expense savedExpense = expenseRepository.save(expense);
 
@@ -61,25 +70,10 @@ public class ExpenseService {
         return savedExpense;
     }
 
-    private void validateRelationships(Expense expense) {
-        // Validate user
-        if (expense.getUserId() != null) {
-            Optional<User> userOpt = userRepository.findById(expense.getUserId());
-            if (!userOpt.isPresent()) {
-                throw new RuntimeException("User not found");
-            }
-            expense.setUserName(userOpt.get().getName());
-        }
-
-        // Validate room
-        if (expense.getRoomId() != null) {
-            Optional<Room> roomOpt = roomRepository.findById(expense.getRoomId());
-            if (!roomOpt.isPresent()) {
-                throw new RuntimeException("Room not found");
-            }
-            expense.setRoomNumber(roomOpt.get().getRoomNumber());
-        }
-
+    private void paymentCalculation(Room room, Expense expense) {
+        room.setBalance(room.getBalance()-expense.getAmount());
+        expense.setRoomNumber(room.getRoomNumber());
+        roomRepository.save(room);
     }
 
     private String validateExpense(Expense expense) {
@@ -144,6 +138,7 @@ public class ExpenseService {
 
     public Expense updateExpense(Expense expense, String expenseId) {
         Optional<Expense> existingExpenseOpt = expenseRepository.findById(expenseId);
+
         if (!existingExpenseOpt.isPresent()) {
             throw new RuntimeException("Expense not found");
         }
@@ -151,9 +146,7 @@ public class ExpenseService {
         Expense existingExpense = existingExpenseOpt.get();
         existingExpense.setAmount(expense.getAmount());
         existingExpense.setDescription(expense.getDescription());
-        existingExpense.setDate(expense.getDate());
         existingExpense.setCategory(expense.getCategory());
-        existingExpense.setPaymentMethod(expense.getPaymentMethod());
         existingExpense.setSplits(expense.getSplits());
         existingExpense.setPaid(expense.getPaid());
         existingExpense.setPaymentReceiptUrl(expense.getPaymentReceiptUrl());
@@ -166,7 +159,7 @@ public class ExpenseService {
         return expenseRepository.save(existingExpense);
     }
 
-    public void deleteExpense(String expenseId) {
+    public String deleteExpense(String expenseId) {
         Optional<Expense> expenseOpt = expenseRepository.findById(expenseId);
         if (!expenseOpt.isPresent()) {
             throw new RuntimeException("Expense not found with the provided expenseId");
@@ -186,6 +179,32 @@ public class ExpenseService {
         }
 
         expenseRepository.deleteById(expenseId);
+        return "Expense has benn deleted Successfully with id: "+expenseId;
+    }
+
+
+    public String deleteAllExpense() {
+        expenseRepository.deleteAll();
+        return "All Expense has been deleted Successfully";
+    }
+
+
+
+    public List<Expense> getUserExpenses(String userId) {
+        if(userId==null || userId.trim().isEmpty()){
+            throw new IllegalArgumentException("User ID cannot be null or empty");
+        }
+        Optional<User> userOpt = userRepository.findById(userId);
+        if (!userOpt.isPresent()) {
+            throw new RuntimeException("User not found with ID: "+userId);
+        }
+        User user = userOpt.get();
+        if(user.getExpenseIds()==null || user.getExpenseIds().size()==0){
+            throw new RuntimeException("Empty Expences on the userId: "+ userId);
+        }
+
+        List<Expense> expenses = expenseRepository.findAllById(user.getExpenseIds());
+        return expenses;
     }
 
 }

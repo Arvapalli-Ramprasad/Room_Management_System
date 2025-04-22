@@ -18,6 +18,9 @@ public class Room {
     private Integer totalCapacity;
     private Integer currentOccupancy;
     private Double monthlyRent;
+    private Double totalAmountToBeCollected; // Total expected from all students
+    private Double totalAmountCollected;     //amount collected
+    private Double balance;                  // Current balance after expenses
     private Double securityDeposit;
     private String address;
     private List<String> amenities;
@@ -38,7 +41,7 @@ public class Room {
     public Room() {
     }
 
-    public Room(String id, String roomNumber, String floorNumber, String buildingName, Integer totalCapacity, Integer currentOccupancy, Double monthlyRent, Double securityDeposit, String address, List<String> amenities, List<String> studentIds, String notes, Boolean active, LocalDateTime createdAt, LocalDateTime updatedAt, String maintenanceStatus, String roomType, Boolean sharedBathroom, String furnishingStatus, String ownerContact, Integer rentDueDate, LocalDate lastInspectionDate, List<String> photos) {
+    public Room(String id, String roomNumber, String floorNumber, String buildingName, Integer totalCapacity, Integer currentOccupancy, Double monthlyRent, Double totalAmountToBeCollected, Double totalAmountCollected, Double balance, Double securityDeposit, String address, List<String> amenities, List<String> studentIds, String notes, Boolean active, LocalDateTime createdAt, LocalDateTime updatedAt, String maintenanceStatus, String roomType, Boolean sharedBathroom, String furnishingStatus, String ownerContact, Integer rentDueDate, LocalDate lastInspectionDate, List<String> photos) {
         this.id = id;
         this.roomNumber = roomNumber;
         this.floorNumber = floorNumber;
@@ -46,6 +49,9 @@ public class Room {
         this.totalCapacity = totalCapacity;
         this.currentOccupancy = currentOccupancy;
         this.monthlyRent = monthlyRent;
+        this.totalAmountToBeCollected = totalAmountToBeCollected;
+        this.totalAmountCollected = totalAmountCollected;
+        this.balance = balance;
         this.securityDeposit = securityDeposit;
         this.address = address;
         this.amenities = amenities;
@@ -118,6 +124,30 @@ public class Room {
 
     public void setMonthlyRent(Double monthlyRent) {
         this.monthlyRent = monthlyRent;
+    }
+
+    public Double getTotalAmountToBeCollected() {
+        return totalAmountToBeCollected;
+    }
+
+    public void setTotalAmountToBeCollected(Double totalAmountToBeCollected) {
+        this.totalAmountToBeCollected = totalAmountToBeCollected;
+    }
+
+    public Double getTotalAmountCollected() {
+        return totalAmountCollected;
+    }
+
+    public void setTotalAmountCollected(Double totalAmountCollected) {
+        this.totalAmountCollected = totalAmountCollected;
+    }
+
+    public Double getBalance() {
+        return balance;
+    }
+
+    public void setBalance(Double balance) {
+        this.balance = balance;
     }
 
     public Double getSecurityDeposit() {

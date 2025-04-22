@@ -54,6 +54,7 @@ public class UserService {
         // Always set updatedAt
         user.setUpdatedAt(LocalDateTime.now());
 
+        boolean isPaymentCalculated = paymentCalculation(user,room);
         // 4. Save the user
         User savedUser = userRepository.save(user);
 
@@ -66,12 +67,23 @@ public class UserService {
         studentIds.add(savedUser.getId());
         room.setStudentIds(studentIds);
         room.setCurrentOccupancy(room.getStudentIds().size());
-
-        // 6. Update the room in the database
+        room.setTotalAmountToBeCollected(room.getMonthlyRent()*room.getStudentIds().size());
         roomRepository.save(room);
 
         return savedUser;
 
+    }
+
+    private boolean paymentCalculation(User user, Room room){
+        if(user.getMonthlyPayment()>user.getTotalPaid()){
+            user.setPendingAmount(user.getMonthlyPayment()-user.getTotalPaid());
+            room.setTotalAmountCollected(room.getTotalAmountCollected()+user.getTotalPaid());
+            room.setBalance(room.getTotalAmountCollected());
+        } else if (user.getMonthlyPayment().equals(user.getTotalPaid())) {
+            room.setTotalAmountCollected(room.getTotalAmountCollected()+user.getTotalPaid());
+            room.setBalance(room.getTotalAmountCollected());
+        }
+        return true;
     }
 
     public User getUser(String userId){
@@ -149,6 +161,11 @@ public class UserService {
         }
 
         return null;
+    }
+
+    public String deleteAllUsers() {
+        userRepository.deleteAll();
+        return "All Users Deleted Successfully";
     }
 
 }

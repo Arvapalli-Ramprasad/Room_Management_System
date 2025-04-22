@@ -27,6 +27,7 @@ public class RoomService {
                 room.setCreatedAt(LocalDateTime.now());
             }
             room.setUpdatedAt(LocalDateTime.now());
+            room.setTotalAmountToBeCollected(room.getStudentIds().size()*room.getMonthlyRent());
             return roomRepository.save(room);
         } else throw new RuntimeException("Mandatory fields are missing: "+  isValid);
     }
@@ -87,4 +88,12 @@ public class RoomService {
         }
         return null;
     }
+
+
+    public String deleteAllRoom() {
+         roomRepository.deleteAll();
+         return "All rooms deleted Successfully";
+    }
+
+
 }
