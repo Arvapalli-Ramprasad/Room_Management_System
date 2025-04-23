@@ -1,8 +1,10 @@
 package com.example.Room_Management_System.Controller;
 
 import com.example.Room_Management_System.Models.Room;
+import com.example.Room_Management_System.Models.User;
 import com.example.Room_Management_System.Services.RoomService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -33,6 +35,24 @@ public class RoomController {
         }
 
     }
+
+    @GetMapping("/getAllUser")
+    public ResponseEntity getUser(@RequestParam(required = false, defaultValue = "50") Integer limit, @RequestParam(required = false, defaultValue = "0") Integer offset){
+
+        try {
+            Page<Room> rooms = roomService.getAllRooms(limit, offset);
+            if (rooms.isEmpty()) {
+                return ResponseEntity.ok(Page.empty());
+            }
+            return ResponseEntity.ok(rooms);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error fetching users: " + e.getMessage());
+        }
+
+    }
+
+
 
     @DeleteMapping("/deleteRoom")
     public ResponseEntity deleteRoom(@RequestParam("id") String roomId ){

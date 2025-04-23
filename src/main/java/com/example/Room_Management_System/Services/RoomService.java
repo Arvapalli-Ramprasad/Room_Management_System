@@ -1,8 +1,12 @@
 package com.example.Room_Management_System.Services;
 
 import com.example.Room_Management_System.Models.Room;
+import com.example.Room_Management_System.Models.User;
 import com.example.Room_Management_System.Repository.RoomRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -40,6 +44,16 @@ public class RoomService {
         }
         Room room = roomOpt.get();
         return room;
+    }
+
+    public Page<Room> getAllRooms(Integer limit, Integer offset){
+
+        Pageable pageable = PageRequest.of(
+                offset,
+                limit
+        );
+        return roomRepository.findAll(pageable);
+
     }
 
     public Room deleteRoom(String roomId) {
