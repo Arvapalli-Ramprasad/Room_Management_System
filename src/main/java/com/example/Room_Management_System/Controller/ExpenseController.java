@@ -1,6 +1,5 @@
 package com.example.Room_Management_System.Controller;
 import com.example.Room_Management_System.Models.Expense;
-import com.example.Room_Management_System.Models.User;
 import com.example.Room_Management_System.Services.ExpenseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
