@@ -1,7 +1,9 @@
 package com.example.Room_Management_System.Controller;
 import com.example.Room_Management_System.Models.Expense;
+import com.example.Room_Management_System.Models.User;
 import com.example.Room_Management_System.Services.ExpenseService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -35,6 +37,25 @@ public class ExpenseController {
         } catch (RuntimeException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
         }
+    }
+
+    @GetMapping("/getAllExpences")
+    public ResponseEntity getAllexpences(
+            @RequestParam(required = false, defaultValue = "50") Integer limit,
+            @RequestParam(required = false, defaultValue = "0") Integer offset)
+    {
+
+        try {
+            Page<Expense> expenses = expenseService.getAllExpences(limit, offset);
+            if (expenses.isEmpty()) {
+                return ResponseEntity.ok(Page.empty());
+            }
+            return ResponseEntity.ok(expenses);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error fetching users: " + e.getMessage());
+        }
+
     }
 
     @GetMapping("/user/{userId}")

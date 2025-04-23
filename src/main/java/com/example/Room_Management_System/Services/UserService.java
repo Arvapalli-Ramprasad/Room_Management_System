@@ -5,6 +5,9 @@ import com.example.Room_Management_System.Models.User;
 import com.example.Room_Management_System.Repository.RoomRepository;
 import com.example.Room_Management_System.Repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -94,6 +97,16 @@ public class UserService {
         }
         User user = userOpt.get();
         return user;
+    }
+
+    public Page<User> getAllUsers(Integer limit, Integer offset){
+
+        Pageable pageable = PageRequest.of(
+                offset,
+                limit
+        );
+        return userRepository.findAll(pageable);
+
     }
 
     public User deleteUser(String userId){
