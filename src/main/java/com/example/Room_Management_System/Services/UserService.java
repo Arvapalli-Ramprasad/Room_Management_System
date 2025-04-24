@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -27,6 +29,9 @@ public class UserService {
 
     @Autowired
     private RoomService roomService;
+
+    @Autowired
+    private JavaMailSender javaMailSender;
 
     public User addUser(User user, String roomId) {
         Room room = roomService.getRoom(roomId);
@@ -58,6 +63,27 @@ public class UserService {
         user.setUpdatedAt(LocalDateTime.now());
 
         boolean isPaymentCalculated = paymentCalculation(user,room);
+
+        SimpleMailMessage simpleMailMessage = new SimpleMailMessage();
+
+        simpleMailMessage.setTo(user.getEmail());
+        simpleMailMessage.setReplyTo("springbootofficial@gmail.com");
+        simpleMailMessage.setSubject("Welcome to Room Number: " + room.getRoomNumber());
+
+        simpleMailMessage.setText(
+                "Dear " + user.getName() + ",\n\n" +
+                        "Welcome to our Room Management System!\n\n" +
+                        "We're excited to let you know that you’ve been successfully allocated to Room Number: " + room.getRoomNumber() + ".\n" +
+                        "Your room is fully furnished and includes all the amenities you need for a comfortable stay.\n\n" +
+                        "As a welcome offer, we’re providing you a **20% discount** on your first month's rent!\n\n" +
+                        "If you have any questions or need assistance, feel free to reach out to our support team.\n\n" +
+                        "Thank you for choosing us.\n\n" +
+                        "Best regards,\n" +
+                        "Room Management Team"
+        );
+
+        javaMailSender.send(simpleMailMessage);
+
         // 4. Save the user
         User savedUser = userRepository.save(user);
 

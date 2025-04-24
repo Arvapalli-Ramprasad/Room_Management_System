@@ -8,7 +8,7 @@ public class RoomManagementSystemApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(RoomManagementSystemApplication.class, args);
-		//http://localhost:8080/swagger-ui/index.html
+//		http://localhost:8080/swagger-ui/index.html
 	}
 
 }
