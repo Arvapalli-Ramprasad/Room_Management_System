@@ -42,10 +42,9 @@ public class UserService {
         }
 
 
-        // 2. Generate and set user ID if not already set
-        if (user.getId() == null) {
+        // 2. Generate and set user ID
             user.setId(UUID.randomUUID().toString());
-        }
+
         // 3. Set the user's roomId field
         user.setRoomId(roomId);
 
@@ -205,6 +204,10 @@ public class UserService {
     public String deleteAllUsers() {
         userRepository.deleteAll();
         return "All Users Deleted Successfully";
+    }
+
+    public List<User> searchByText(String text){
+        return userRepository.searchByText(text);
     }
 
 }

@@ -10,6 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -17,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 
 @Service
@@ -30,9 +34,13 @@ public class ExpenseService {
     @Autowired
     private RoomRepository roomRepository;
 
+    @Autowired
+    private MongoTemplate mongoTemplate;
+
     public Expense addExpense(Expense expense, String userId) {
         // 1. Validate mandatory fields
-
+        String uuid = UUID.randomUUID().toString();
+        expense.setId(uuid);
         Optional<User> userOpt = userRepository.findById(userId);
         if (!userOpt.isPresent()) {
             throw new RuntimeException("User not found");
@@ -218,6 +226,19 @@ public class ExpenseService {
         );
         return expenseRepository.findAll(pageable);
 
+    }
+
+    public List<Expense> searchByText(String text) {
+        // Create regex pattern, case-insensitive
+        Pattern regex = Pattern.compile(text, Pattern.CASE_INSENSITIVE);
+        // Build OR criteria
+        Criteria criteria = new Criteria().orOperator(
+                Criteria.where("category").regex(regex),
+                Criteria.where("userName").regex(regex),
+                Criteria.where("roomNumber").regex(regex)
+        );
+        Query query = new Query(criteria);
+        return mongoTemplate.find(query, Expense.class);
     }
 
 }

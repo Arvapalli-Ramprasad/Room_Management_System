@@ -9,7 +9,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -30,6 +32,7 @@ public class RoomService {
             if (room.getCreatedAt() == null) {
                 room.setCreatedAt(LocalDateTime.now());
             }
+            room.setRentDueDate(LocalDate.now().withDayOfMonth(5).atStartOfDay());
             room.setUpdatedAt(LocalDateTime.now());
             room.setTotalAmountToBeCollected(room.getStudentIds().size()*room.getMonthlyRent());
             return roomRepository.save(room);
@@ -109,5 +112,8 @@ public class RoomService {
          return "All rooms deleted Successfully";
     }
 
+    public List<Room> searchByText(String text){
+        return roomRepository.searchByText(text);
+    }
 
 }

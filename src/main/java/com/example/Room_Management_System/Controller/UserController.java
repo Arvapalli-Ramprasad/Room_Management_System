@@ -7,6 +7,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.w3c.dom.stylesheets.LinkStyle;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("user")
@@ -36,7 +39,7 @@ public class UserController {
 
     }
 
-    @GetMapping("/getAllRooms")
+    @GetMapping("/getAllUsers")
     public ResponseEntity getUser(@RequestParam(required = false, defaultValue = "50") Integer limit, @RequestParam(required = false, defaultValue = "0") Integer offset){
 
         try {
@@ -83,5 +86,10 @@ public class UserController {
             return new ResponseEntity<>(e.getMessage(),HttpStatus.BAD_REQUEST);
         }
 
+    }
+
+    @GetMapping("/search/{text}")
+    public List<User> search(@PathVariable String text) {
+        return userService.searchByText(text);
     }
 }

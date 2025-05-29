@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("rooms")
 public class RoomController {
@@ -36,7 +38,7 @@ public class RoomController {
 
     }
 
-    @GetMapping("/getAllUser")
+    @GetMapping("/getAllRooms")
     public ResponseEntity getUser(@RequestParam(required = false, defaultValue = "50") Integer limit, @RequestParam(required = false, defaultValue = "0") Integer offset){
 
         try {
@@ -83,6 +85,11 @@ public class RoomController {
         }catch (Exception e){
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
+    }
+
+    @GetMapping("/search/{text}")
+    public List<Room> search(@PathVariable String text) {
+        return roomService.searchByText(text);
     }
 
 }

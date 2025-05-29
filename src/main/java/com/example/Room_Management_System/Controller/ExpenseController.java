@@ -1,5 +1,6 @@
 package com.example.Room_Management_System.Controller;
 import com.example.Room_Management_System.Models.Expense;
+import com.example.Room_Management_System.Models.Room;
 import com.example.Room_Management_System.Services.ExpenseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -115,6 +116,11 @@ public class ExpenseController {
         } catch (RuntimeException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
+    }
+
+    @GetMapping("/search/{text}")
+    public List<Expense> search(@PathVariable String text) {
+        return expenseService.searchByText(text);
     }
 //
 //    @GetMapping("/stats/{roomId}")

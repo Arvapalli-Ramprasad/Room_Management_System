@@ -7,6 +7,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 
 @Document(collection = "rooms")
 public class Room {
@@ -34,14 +36,15 @@ public class Room {
     private Boolean sharedBathroom;
     private String furnishingStatus;
     private String ownerContact;
-    private Integer rentDueDate;
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private LocalDateTime rentDueDate;
     private LocalDate lastInspectionDate;
     private List<String> photos;
 
     public Room() {
     }
 
-    public Room(String id, String roomNumber, String floorNumber, String buildingName, Integer totalCapacity, Integer currentOccupancy, Double monthlyRent, Double totalAmountToBeCollected, Double totalAmountCollected, Double balance, Double securityDeposit, String address, List<String> amenities, List<String> studentIds, String notes, Boolean active, LocalDateTime createdAt, LocalDateTime updatedAt, String maintenanceStatus, String roomType, Boolean sharedBathroom, String furnishingStatus, String ownerContact, Integer rentDueDate, LocalDate lastInspectionDate, List<String> photos) {
+    public Room(String id, String roomNumber, String floorNumber, String buildingName, Integer totalCapacity, Integer currentOccupancy, Double monthlyRent, Double totalAmountToBeCollected, Double totalAmountCollected, Double balance, Double securityDeposit, String address, List<String> amenities, List<String> studentIds, String notes, Boolean active, LocalDateTime createdAt, LocalDateTime updatedAt, String maintenanceStatus, String roomType, Boolean sharedBathroom, String furnishingStatus, String ownerContact, LocalDateTime rentDueDate, LocalDate lastInspectionDate, List<String> photos) {
         this.id = id;
         this.roomNumber = roomNumber;
         this.floorNumber = floorNumber;
@@ -254,11 +257,11 @@ public class Room {
         this.ownerContact = ownerContact;
     }
 
-    public Integer getRentDueDate() {
+    public LocalDateTime getRentDueDate() {
         return rentDueDate;
     }
 
-    public void setRentDueDate(Integer rentDueDate) {
+    public void setRentDueDate(LocalDateTime rentDueDate) {
         this.rentDueDate = rentDueDate;
     }
 
