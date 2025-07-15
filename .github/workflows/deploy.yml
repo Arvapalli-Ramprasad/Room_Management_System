@@ -3,7 +3,7 @@ name: 🚀 Deploy Spring Boot App to EC2
 on:
   push:
     branches:
-      - master  # Trigger only when changes are pushed to master
+      - master
 
 jobs:
   deploy:
@@ -28,8 +28,8 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: target/Room_Management_System-0.0.1-SNAPSHOT.jar
-          target: /home/ec2-user/Room_Management_System/target/
+          source: target/*.jar
+          target: /home/ec2-user/Room_Management_System/
 
       - name: 🔁 Restart Spring Boot App
         uses: appleboy/ssh-action@master
@@ -38,8 +38,8 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            pkill -f Room_Management_System-0.0.1-SNAPSHOT.jar || echo "App not running"
-            cd /home/ec2-user/Room_Management_System/target
+            pkill -f 'Room_Management_System' || echo "No process to kill"
+            cd /home/ec2-user/Room_Management_System
             export MONGO_URI="${{ secrets.MONGO_URI }}"
             export MAIL_USERNAME="${{ secrets.MAIL_USERNAME }}"
             export MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD }}"
