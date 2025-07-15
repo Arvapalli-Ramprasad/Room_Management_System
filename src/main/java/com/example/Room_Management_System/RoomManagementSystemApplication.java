@@ -13,6 +13,10 @@ public class RoomManagementSystemApplication {
 		//local mongodb connection
 		//mongodb://localhost:27017/Room_Management_System
 
+//		#spring.mail.password=wetdaxyripfisndm
+//		#spring.mail.username=springbootofficial@gmail.com
+
+
 		//Mango atlas
 		// mongodb+srv://Arvapalli_Ramprasad:Ramu1818@18MANGODBATLAS@mongo.cv2xjm0.mongodb.net/?retryWrites=true&w=majority&appName=Mongo
 	}
