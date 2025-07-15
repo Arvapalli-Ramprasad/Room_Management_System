@@ -3,7 +3,7 @@ name: 🚀 Deploy Spring Boot App to EC2
 on:
   push:
     branches:
-      - master  # Trigger only on pushes to the master branch
+      - master  # Trigger only on push to master
 
 jobs:
   deploy:
@@ -49,6 +49,11 @@ jobs:
             export MAIL_USERNAME="${{ secrets.MAIL_USERNAME }}"
             export MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD }}"
 
-            echo "🚀 Starting Spring Boot application"
-            nohup java -jar Room_Management_System-0.0.1-SNAPSHOT.jar > app.log 2>&1 < /dev/null & disown
-    
+            echo "🔒 Setting executable permission for the JAR"
+            chmod +x Room_Management_System-0.0.1-SNAPSHOT.jar
+
+            echo "📁 Creating log directory"
+            mkdir -p ~/logs
+
+            echo "🚀 Starting Spring Boot application in background"
+            setsid java -jar Room_Management_System-0.0.1-SNAPSHOT.jar > ~/logs/app.log 2>&1 < /dev/null &
