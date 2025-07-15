@@ -3,7 +3,7 @@ name: 🚀 Deploy Spring Boot App to EC2
 on:
   push:
     branches:
-      - master
+      - master  # Trigger only when changes are pushed to master
 
 jobs:
   deploy:
@@ -38,7 +38,7 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            pkill -f Room_Management_System-0.0.1-SNAPSHOT.jar || echo "Not running"
+            pkill -f Room_Management_System-0.0.1-SNAPSHOT.jar || echo "App not running"
             cd /home/ec2-user/Room_Management_System/target
             export MONGO_URI="${{ secrets.MONGO_URI }}"
             export MAIL_USERNAME="${{ secrets.MAIL_USERNAME }}"
