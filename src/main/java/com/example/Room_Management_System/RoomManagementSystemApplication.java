@@ -10,6 +10,9 @@ public class RoomManagementSystemApplication {
 		SpringApplication.run(RoomManagementSystemApplication.class, args);
 //		http://localhost:8080/swagger-ui/index.html
 
+		//local mongodb connection
+		//mongodb://localhost:27017/Room_Management_System
+
 		//Mango atlas
 		// mongodb+srv://Arvapalli_Ramprasad:Ramu1818@18MANGODBATLAS@mongo.cv2xjm0.mongodb.net/?retryWrites=true&w=majority&appName=Mongo
 	}

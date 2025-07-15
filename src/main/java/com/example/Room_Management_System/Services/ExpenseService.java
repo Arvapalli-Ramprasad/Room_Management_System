@@ -6,6 +6,7 @@ import com.example.Room_Management_System.Models.User;
 import com.example.Room_Management_System.Repository.ExpenseRepository;
 import com.example.Room_Management_System.Repository.RoomRepository;
 import com.example.Room_Management_System.Repository.UserRepository;
+import com.example.Room_Management_System.Requests.UpdateExpenseDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -13,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -169,6 +171,29 @@ public class ExpenseService {
 
         return expenseRepository.save(existingExpense);
     }
+
+    public Expense patchExpense(String id, UpdateExpenseDTO dto) {
+        Query query = new Query(Criteria.where("id").is(id));
+        Update update = new Update();
+
+        if (dto.getAmount() != null) update.set("amount", dto.getAmount());
+        if (dto.getDescription() != null) update.set("description", dto.getDescription());
+        if (dto.getDate() != null) update.set("date", dto.getDate());
+        if (dto.getCategory() != null) update.set("category", dto.getCategory());
+        if (dto.getPaymentMethod() != null) update.set("paymentMethod", dto.getPaymentMethod());
+        if (dto.getPaid() != null) update.set("paid", dto.getPaid());
+        if (dto.getPaymentReceiptUrl() != null) update.set("paymentReceiptUrl", dto.getPaymentReceiptUrl());
+        if (dto.getNotes() != null) update.set("notes", dto.getNotes());
+        if (dto.getAttachmentUrls() != null) update.set("attachmentUrls", dto.getAttachmentUrls());
+
+        update.set("updatedAt", LocalDateTime.now());
+
+        mongoTemplate.updateFirst(query, update, Expense.class);
+
+        return mongoTemplate.findById(id, Expense.class);
+    }
+
+
 
     public String deleteExpense(String expenseId) {
         Optional<Expense> expenseOpt = expenseRepository.findById(expenseId);

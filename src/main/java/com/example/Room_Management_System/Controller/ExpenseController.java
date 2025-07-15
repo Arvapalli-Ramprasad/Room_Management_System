@@ -1,6 +1,7 @@
 package com.example.Room_Management_System.Controller;
 import com.example.Room_Management_System.Models.Expense;
 import com.example.Room_Management_System.Models.Room;
+import com.example.Room_Management_System.Requests.UpdateExpenseDTO;
 import com.example.Room_Management_System.Services.ExpenseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -96,6 +97,12 @@ public class ExpenseController {
         } catch (RuntimeException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
         }
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<Expense> partilaUpdateExpense(@PathVariable String id, @RequestBody UpdateExpenseDTO expenseDTO){
+        Expense updatedExpense = expenseService.patchExpense(id, expenseDTO);
+        return ResponseEntity.ok(updatedExpense);
     }
 
     @DeleteMapping("/{id}")

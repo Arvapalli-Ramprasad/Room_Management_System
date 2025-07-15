@@ -1,0 +1,46 @@
+name: 🚀 Deploy Spring Boot App to EC2
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v3
+
+      - name: ☕ Set up Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '19'
+          distribution: 'temurin'
+
+      - name: 📦 Build with Maven
+        run: mvn clean package -DskipTests
+
+      - name: 📤 Upload JAR to EC2
+        uses: appleboy/scp-action@v0.1.6
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: target/Room_Management_System-0.0.1-SNAPSHOT.jar
+          target: /home/ec2-user/Room_Management_System/target/
+
+      - name: 🔁 Restart Spring Boot App
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            pkill -f Room_Management_System-0.0.1-SNAPSHOT.jar || echo "Not running"
+            cd /home/ec2-user/Room_Management_System/target
+            export MONGO_URI="${{ secrets.MONGO_URI }}"
+            export MAIL_USERNAME="${{ secrets.MAIL_USERNAME }}"
+            export MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD }}"
+            nohup java -jar Room_Management_System-0.0.1-SNAPSHOT.jar > app.log 2>&1 &
