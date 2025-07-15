@@ -52,3 +52,4 @@ jobs:
             echo "🚀 Starting Spring Boot application"
             nohup java -jar Room_Management_System-0.0.1-SNAPSHOT.jar > app.log 2>&1 < /dev/null &
             disown
+    
