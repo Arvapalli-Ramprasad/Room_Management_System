@@ -35,7 +35,6 @@ jobs:
 
       - name: Deploy and Run Spring Boot JAR on EC2
         uses: appleboy/ssh-action@v1.0.0
-        continue-on-error: true  # ✅ valid position
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
