@@ -50,3 +50,4 @@ jobs:
             
             # Start the Spring Boot JAR in the background
             nohup java -jar Room_Management_System-0.0.1-SNAPSHOT.jar > output.log 2>&1 &
+          continue-on-error: true
