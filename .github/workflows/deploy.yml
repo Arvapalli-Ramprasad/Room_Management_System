@@ -51,11 +51,10 @@ jobs:
             [Service]
             User=ec2-user
             WorkingDirectory=/home/ec2-user
-            ExecStart=/usr/bin/java \
-              -Dspring.data.mongodb.uri="${{ secrets.MONGO_URI }}" \
-              -Dspring.mail.username="${{ secrets.MAIL_USERNAME }}" \
-              -Dspring.mail.password="${{ secrets.MAIL_PASSWORD }}" \
-              -jar Room_Management_System-0.0.1-SNAPSHOT.jar
+            Environment="SPRING_DATA_MONGODB_URI=${{ secrets.MONGO_URI }}"
+            Environment="SPRING_MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}"
+            Environment="SPRING_MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}"
+            ExecStart=/usr/bin/java -jar Room_Management_System-0.0.1-SNAPSHOT.jar
             SuccessExitStatus=143
             TimeoutStopSec=10
             Restart=on-failure
@@ -87,7 +86,7 @@ jobs:
               sleep 10
             done
             echo -e "\n❌ Application failed to start. Showing logs:"
-            journalctl -u room-management.service -n 50 --no-pager
+            sudo journalctl -u room-management.service -n 50 --no-pager
             exit 1
 
       - name: 📄 Show Application Logs
@@ -99,4 +98,4 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             echo "📝 Last 50 lines of application logs:"
-            journalctl -u room-management.service -n 50 --no-pager
+            sudo journalctl -u room-management.service -n 50 --no-pager
