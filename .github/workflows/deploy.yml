@@ -18,6 +18,10 @@ jobs:
           java-version: '19'
           distribution: 'temurin'
 
+      - name: ✅ Give execute permission to mvnw
+        run: chmod +x mvnw
+
+
       - name: ⚙️ Build Spring Boot Project
         run: ./mvnw clean package
 
