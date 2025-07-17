@@ -7,6 +7,7 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    environment: production
 
     steps:
       - name: ⬇️ Checkout code
@@ -17,12 +18,12 @@ jobs:
         with:
           java-version: '19'
           distribution: 'temurin'
+          cache: 'maven'
 
-      - name: ✅ Give execute permission to mvnw
-        run: chmod +x mvnw
-
-      - name: ⚙️ Build Spring Boot Project (skip tests)
-        run: ./mvnw clean package -DskipTests
+      - name: 🔧 Build with Maven
+        run: |
+          chmod +x mvnw
+          ./mvnw clean package -DskipTests
 
       - name: 📤 Upload JAR to EC2
         uses: appleboy/scp-action@v0.1.7
@@ -32,28 +33,70 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           source: target/Room_Management_System-0.0.1-SNAPSHOT.jar
           target: /home/ec2-user/
+          strip_components: 1
 
-      - name: 🚀 SSH into EC2 and Run App
+      - name: 🚀 Deploy Application with systemd
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            echo "🔁 Stopping old instance..."
-            pkill -f 'Room_Management_System' || true
-
-            echo "🚀 Starting new Spring Boot app..."
-            nohup java \
+            echo "📦 Creating systemd service..."
+            sudo bash -c 'cat > /etc/systemd/system/room-management.service' << 'EOL'
+            [Unit]
+            Description=Room Management System
+            After=network.target
+            
+            [Service]
+            User=ec2-user
+            WorkingDirectory=/home/ec2-user
+            ExecStart=/usr/bin/java \
               -Dspring.data.mongodb.uri="${{ secrets.MONGO_URI }}" \
               -Dspring.mail.username="${{ secrets.MAIL_USERNAME }}" \
               -Dspring.mail.password="${{ secrets.MAIL_PASSWORD }}" \
-              -jar Room_Management_System-0.0.1-SNAPSHOT.jar > app.log 2>&1 < /dev/null &
+              -jar Room_Management_System-0.0.1-SNAPSHOT.jar
+            SuccessExitStatus=143
+            TimeoutStopSec=10
+            Restart=on-failure
+            RestartSec=5
+            
+            [Install]
+            WantedBy=multi-user.target
+            EOL
+            
+            echo "🔄 Reloading systemd and starting service..."
+            sudo systemctl daemon-reload
+            sudo systemctl enable room-management.service
+            sudo systemctl restart room-management.service
 
-      - name: 📄 Check app logs (optional)
+      - name: 🩺 Verify Application Health
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          script: tail -n 50 app.log
+          script: |
+            echo "Checking application health..."
+            for i in {1..10}; do
+              if curl -s -f http://localhost:8080/actuator/health; then
+                echo -e "\n✅ Application is up and running!"
+                exit 0
+              fi
+              echo -n "."
+              sleep 10
+            done
+            echo -e "\n❌ Application failed to start. Showing logs:"
+            journalctl -u room-management.service -n 50 --no-pager
+            exit 1
+
+      - name: 📄 Show Application Logs
+        if: always()
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "📝 Last 50 lines of application logs:"
+            journalctl -u room-management.service -n 50 --no-pager
