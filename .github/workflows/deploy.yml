@@ -2,64 +2,61 @@ name: Build and Deploy to EC2
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  WORKING_DIRECTORY: /home/ec2-user
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-    environment: production
 
     steps:
-      - name: ⬇️ Checkout code
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: ☕ Set up Java 19
+      - name: Set up JDK 19
         uses: actions/setup-java@v3
         with:
           java-version: '19'
           distribution: 'temurin'
-          cache: 'maven'
 
-      - name: 🔧 Build with Maven
-        run: |
-          chmod +x mvnw
-          ./mvnw clean package -DskipTests
+      - name: Build with Maven
+        run: mvn -B clean package -DskipTests
 
-      - name: 📤 Upload JAR to EC2
-        uses: appleboy/scp-action@v0.1.7
+      - name: List files in target
+        run: ls -l target/
+
+      - name: Upload JAR to EC2
+        uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: target/Room_Management_System-0.0.1-SNAPSHOT.jar
-          target: /home/ec2-user/
-          strip_components: 1
+          source: "target/Room_Management_System-0.0.1-SNAPSHOT.jar"
+          target: "${{ env.WORKING_DIRECTORY }}/"
 
-      - name: 🚀 Deploy Application with systemd
-        uses: appleboy/ssh-action@v1.0.0
+      - name: Deploy application
+        uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            echo "📦 Creating systemd service..."
-            sudo bash -c 'cat > /etc/systemd/system/room-management.service' << 'EOL'
+            # Create systemd service file with environment variables
+            cat << EOF | sudo tee /etc/systemd/system/room-management.service
             [Unit]
             Description=Room Management System
             After=network.target
             
             [Service]
             User=ec2-user
-            WorkingDirectory=/home/ec2-user
-            Environment="SPRING_DATA_MONGODB_URI=mongodb+srv://Arvapalli_Ramprasad:UDQxjdBSkJaUqGYs@mongo.cv2xjm0.mongodb.net/Room_Management_System?retryWrites=true&w=majority&appName=Mongo"
+            WorkingDirectory=${{ env.WORKING_DIRECTORY }}
+            # Using the exact secret names from your repository
+            Environment="SPRING_DATA_MONGODB_URI=${{ secrets.MONGO_URI }}"
             Environment="SPRING_MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}"
             Environment="SPRING_MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}"
-            Environment="SPRING_MAIL_HOST=smtp.gmail.com"
-            Environment="SPRING_MAIL_PORT=587"
-            Environment="SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true"
-            Environment="SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true"
-            Environment="SPRING_MAIL_PROPERTIES_MAIL_SMTP_SSL_TRUST=smtp.gmail.com"
-            Environment="SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_REQUIRED=true"
             ExecStart=/usr/bin/java -jar Room_Management_System-0.0.1-SNAPSHOT.jar
             SuccessExitStatus=143
             TimeoutStopSec=10
@@ -68,40 +65,29 @@ jobs:
             
             [Install]
             WantedBy=multi-user.target
-            EOL
+            EOF
             
-            echo "🔄 Reloading systemd and starting service..."
+            # Reload systemd to pick up the new service file
             sudo systemctl daemon-reload
+            
+            # Enable the service to start on boot
             sudo systemctl enable room-management.service
+            
+            # Restart the service
             sudo systemctl restart room-management.service
 
-      - name: 🩺 Verify Application Health
-        uses: appleboy/ssh-action@v1.0.0
+      - name: Verify service status
+        uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            echo "Waiting for application to start..."
-            for i in {1..10}; do
-              if curl -s -f http://localhost:8080/actuator/health; then
-                echo -e "\n✅ Application is up and running!"
-                exit 0
-              fi
-              echo -n "."
-              sleep 10
-            done
-            echo -e "\n❌ Application failed to start. Showing logs:"
+            # Check service status
+            systemctl status room-management.service
+            
+            # Check application logs
             sudo journalctl -u room-management.service -n 50 --no-pager
-            exit 1
-
-      - name: 📄 Show Application Logs
-        if: always()
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ec2-user
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            echo "📝 Last 50 lines of application logs:"
-            sudo journalctl -u room-management.service -n 50 --no-pager
+            
+            # Check if application is responding
+            curl -s http://localhost:8080/actuator/health || echo "Health check failed"
