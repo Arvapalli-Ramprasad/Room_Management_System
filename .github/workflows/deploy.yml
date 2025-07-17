@@ -45,7 +45,7 @@ jobs:
 
             echo "🚀 Starting new Spring Boot app..."
             nohup java \
-              -Dspring.data.mongodb.uri="${{ secrets.MONGO_URI }}" \
+              -Dspring.data.mongodb.uri=mongodb+srv://Arvapalli_Ramprasad:UDQxjdBSkJaUqGYs@mongo.cv2xjm0.mongodb.net/Room_Management_System?retryWrites=true&w=majority&appName=Mongo
               -Dspring.mail.username="${{ secrets.MAIL_USERNAME }}" \
               -Dspring.mail.password="${{ secrets.MAIL_PASSWORD }}" \
               -jar Room_Management_System-0.0.1-SNAPSHOT.jar > app.log 2>&1 < /dev/null &
