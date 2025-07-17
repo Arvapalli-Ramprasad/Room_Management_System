@@ -40,11 +40,20 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            echo "🔁 Stopping old instance..."
             pkill -f 'Room_Management_System' || true
-            
+
+            echo "🚀 Starting new Spring Boot app..."
             nohup java \
               -Dspring.data.mongodb.uri="${{ secrets.MONGO_URI }}" \
               -Dspring.mail.username="${{ secrets.MAIL_USERNAME }}" \
               -Dspring.mail.password="${{ secrets.MAIL_PASSWORD }}" \
-              -jar Room_Management_System-0.0.1-SNAPSHOT.jar > output.log 2>&1 &
-          
+              -jar Room_Management_System-0.0.1-SNAPSHOT.jar > app.log 2>&1 < /dev/null &
+
+      - name: 📄 Check app logs (optional)
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: tail -n 50 app.log
