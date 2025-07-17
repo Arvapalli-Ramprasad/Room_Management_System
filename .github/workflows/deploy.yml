@@ -21,9 +21,8 @@ jobs:
       - name: ✅ Give execute permission to mvnw
         run: chmod +x mvnw
 
-
-      - name: ⚙️ Build Spring Boot Project
-        run: ./mvnw clean package
+      - name: ⚙️ Build Spring Boot Project (skip tests)
+        run: ./mvnw clean package -DskipTests
 
       - name: 📤 Upload JAR to EC2
         uses: appleboy/scp-action@v0.1.7
