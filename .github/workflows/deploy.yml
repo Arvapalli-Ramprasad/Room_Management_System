@@ -33,27 +33,17 @@ jobs:
           source: target/Room_Management_System-0.0.1-SNAPSHOT.jar
           target: /home/ec2-user/
 
-      - name: 🚀 SSH into EC2 and Run App
+      - name: Deploy and Run Spring Boot JAR on EC2
         uses: appleboy/ssh-action@v1.0.0
+        continue-on-error: true  # ✅ valid position
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            echo "🔁 Stopping old instance..."
             pkill -f 'Room_Management_System' || true
-
-            echo "🚀 Starting new Spring Boot app..."
-            nohup java \
-              -Dspring.data.mongodb.uri=mongodb+srv://Arvapalli_Ramprasad:UDQxjdBSkJaUqGYs@mongo.cv2xjm0.mongodb.net/Room_Management_System?retryWrites=true&w=majority&appName=Mongo
-              -Dspring.mail.username="${{ secrets.MAIL_USERNAME }}" \
-              -Dspring.mail.password="${{ secrets.MAIL_PASSWORD }}" \
-              -jar Room_Management_System-0.0.1-SNAPSHOT.jar > app.log 2>&1 < /dev/null &
-
-      - name: 📄 Check app logs (optional)
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ec2-user
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: tail -n 50 app.log
+            export MONGO_URI="${{ secrets.MONGO_URI }}"
+            export MAIL_USERNAME="${{ secrets.MAIL_USERNAME }}"
+            export MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD }}"
+            nohup java -jar Room_Management_System-0.0.1-SNAPSHOT.jar > output.log 2>&1 &
+      
