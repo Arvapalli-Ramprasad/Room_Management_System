@@ -40,12 +40,10 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Kill any previous Spring Boot process
             pkill -f 'Room_Management_System' || true
-
-            # Start the Spring Boot JAR with environment variables passed via -D
+            
             nohup java \
-              -DMONGO_URI="${{ secrets.MONGO_URI }}" \
-              -DMAIL_USERNAME="${{ secrets.MAIL_USERNAME }}" \
-              -DMAIL_PASSWORD="${{ secrets.MAIL_PASSWORD }}" \
-              -jar Room_Management_System-0.0.1-SNAPSHOT.jar > output.log 2>&1 &
+              -Dspring.data.mongodb.uri="${{ secrets.MONGO_URI }}" \
+              -Dspring.mail.username="${{ secrets.MAIL_USERNAME }}" \
+              -Dspring.mail.password="${{ secrets.MAIL_PASSWORD }}" \
+              -jar Room_Management_System-0.0.1-SNAPSHOT.jar > output.log 2>&1 
