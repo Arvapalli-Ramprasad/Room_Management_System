@@ -40,10 +40,8 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Kill any previous Spring Boot process
             pkill -f 'Room_Management_System' || true
-
-            # Start the Spring Boot app with correct environment values
+            
             nohup java \
               -Dspring.data.mongodb.uri="${{ secrets.MONGO_URI }}" \
               -Dspring.mail.username="${{ secrets.MAIL_USERNAME }}" \
