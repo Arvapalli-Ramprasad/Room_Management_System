@@ -2,92 +2,58 @@ name: Build and Deploy to EC2
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:
-
-env:
-  WORKING_DIRECTORY: /home/ec2-user
+    branches: [ master ]
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: ⬇️ Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up JDK 19
+      - name: ☕ Set up Java 19
         uses: actions/setup-java@v3
         with:
           java-version: '19'
           distribution: 'temurin'
 
-      - name: Build with Maven
-        run: mvn -B clean package -DskipTests
+      - name: ✅ Give execute permission to mvnw
+        run: chmod +x mvnw
 
-      - name: List files in target
-        run: ls -l target/
+      - name: ⚙️ Build Spring Boot Project (skip tests)
+        run: ./mvnw clean package -DskipTests
 
-      - name: Upload JAR to EC2
-        uses: appleboy/scp-action@master
+      - name: 📤 Upload JAR to EC2
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "target/Room_Management_System-0.0.1-SNAPSHOT.jar"
-          target: "${{ env.WORKING_DIRECTORY }}/"
+          source: target/Room_Management_System-0.0.1-SNAPSHOT.jar
+          target: /home/ec2-user/
 
-      - name: Deploy application
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ec2-user
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            # Create systemd service file with environment variables
-            cat << EOF | sudo tee /etc/systemd/system/room-management.service
-            [Unit]
-            Description=Room Management System
-            After=network.target
-            
-            [Service]
-            User=ec2-user
-            WorkingDirectory=${{ env.WORKING_DIRECTORY }}
-            # Using the exact secret names from your repository
-            Environment="SPRING_DATA_MONGODB_URI=${{ secrets.MONGO_URI }}"
-            Environment="SPRING_MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}"
-            Environment="SPRING_MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}"
-            ExecStart=/usr/bin/java -jar Room_Management_System-0.0.1-SNAPSHOT.jar
-            SuccessExitStatus=143
-            TimeoutStopSec=10
-            Restart=on-failure
-            RestartSec=5
-            
-            [Install]
-            WantedBy=multi-user.target
-            EOF
-            
-            # Reload systemd to pick up the new service file
-            sudo systemctl daemon-reload
-            
-            # Enable the service to start on boot
-            sudo systemctl enable room-management.service
-            
-            # Restart the service
-            sudo systemctl restart room-management.service
-
-      - name: Verify service status
-        uses: appleboy/ssh-action@master
+      - name: 🚀 SSH into EC2 and Run App
+        uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Check service status
-            systemctl status room-management.service
-            
-            # Check application logs
-            sudo journalctl -u room-management.service -n 50 --no-pager
-            
-            # Check if application is responding
-            curl -s http://localhost:8080/actuator/health || echo "Health check failed"
+            echo "🔁 Stopping old instance..."
+            pkill -f 'Room_Management_System' || true
+
+            echo "🚀 Starting new Spring Boot app..."
+            nohup java \
+              -Dspring.data.mongodb.uri="${{ secrets.MONGO_URI }}" \
+              -Dspring.mail.username="${{ secrets.MAIL_USERNAME }}" \
+              -Dspring.mail.password="${{ secrets.MAIL_PASSWORD }}" \
+              -jar Room_Management_System-0.0.1-SNAPSHOT.jar > app.log 2>&1 < /dev/null &
+
+      - name: 📄 Check app logs (optional)
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: tail -n 50 app.log
