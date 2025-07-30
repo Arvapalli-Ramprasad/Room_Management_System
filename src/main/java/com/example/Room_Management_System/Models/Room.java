@@ -14,6 +14,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class Room {
     @Id
     private String id;
+
+    private String userId;
     private String roomNumber;
     private String floorNumber;
     private String buildingName;
@@ -44,8 +46,9 @@ public class Room {
     public Room() {
     }
 
-    public Room(String id, String roomNumber, String floorNumber, String buildingName, Integer totalCapacity, Integer currentOccupancy, Double monthlyRent, Double totalAmountToBeCollected, Double totalAmountCollected, Double balance, Double securityDeposit, String address, List<String> amenities, List<String> studentIds, String notes, Boolean active, LocalDateTime createdAt, LocalDateTime updatedAt, String maintenanceStatus, String roomType, Boolean sharedBathroom, String furnishingStatus, String ownerContact, LocalDateTime rentDueDate, LocalDate lastInspectionDate, List<String> photos) {
+    public Room(String id, String userId, String roomNumber, String floorNumber, String buildingName, Integer totalCapacity, Integer currentOccupancy, Double monthlyRent, Double totalAmountToBeCollected, Double totalAmountCollected, Double balance, Double securityDeposit, String address, List<String> amenities, List<String> studentIds, String notes, Boolean active, LocalDateTime createdAt, LocalDateTime updatedAt, String maintenanceStatus, String roomType, Boolean sharedBathroom, String furnishingStatus, String ownerContact, LocalDateTime rentDueDate, LocalDate lastInspectionDate, List<String> photos) {
         this.id = id;
+        this.userId = userId;
         this.roomNumber = roomNumber;
         this.floorNumber = floorNumber;
         this.buildingName = buildingName;
@@ -79,6 +82,14 @@ public class Room {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public String getRoomNumber() {

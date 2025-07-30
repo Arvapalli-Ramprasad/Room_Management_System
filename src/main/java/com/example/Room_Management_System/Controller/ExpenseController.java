@@ -1,12 +1,12 @@
 package com.example.Room_Management_System.Controller;
 import com.example.Room_Management_System.Models.Expense;
-import com.example.Room_Management_System.Models.Room;
 import com.example.Room_Management_System.Requests.UpdateExpenseDTO;
 import com.example.Room_Management_System.Services.ExpenseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,6 +17,7 @@ public class ExpenseController {
     @Autowired
     private ExpenseService expenseService;
 
+    @PreAuthorize("hasAnyAuthority('ROLE_USER', 'ROLE_ADMIN')")
     @PostMapping("addExpense")
     public ResponseEntity addExpense(
             @RequestBody Expense expense,
@@ -30,6 +31,7 @@ public class ExpenseController {
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('ROLE_USER', 'ROLE_ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity getExpense(@PathVariable String id) {
         try {
@@ -40,6 +42,7 @@ public class ExpenseController {
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('ROLE_USER', 'ROLE_ADMIN')")
     @GetMapping("/getAllExpences")
     public ResponseEntity getAllexpences(
             @RequestParam(required = false, defaultValue = "50") Integer limit,
@@ -58,7 +61,7 @@ public class ExpenseController {
         }
 
     }
-
+    @PreAuthorize("hasAnyAuthority('ROLE_USER', 'ROLE_ADMIN')")
     @GetMapping("/user/{userId}")
     public ResponseEntity getUserExpenses(@PathVariable String userId) {
         try {
@@ -89,6 +92,7 @@ public class ExpenseController {
 //        }
 //    }
 //
+    @PreAuthorize("hasAnyAuthority('ROLE_USER', 'ROLE_ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity updateExpense(@PathVariable String id, @RequestBody Expense expense) {
         try {
@@ -99,12 +103,14 @@ public class ExpenseController {
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('ROLE_USER', 'ROLE_ADMIN')")
     @PatchMapping("/{id}")
     public ResponseEntity<Expense> partilaUpdateExpense(@PathVariable String id, @RequestBody UpdateExpenseDTO expenseDTO){
         Expense updatedExpense = expenseService.patchExpense(id, expenseDTO);
         return ResponseEntity.ok(updatedExpense);
     }
 
+    @PreAuthorize("hasAnyAuthority('ROLE_USER', 'ROLE_ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity deleteExpense(@PathVariable String id) {
         try {
@@ -115,6 +121,7 @@ public class ExpenseController {
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('ROLE_USER', 'ROLE_ADMIN')")
     @DeleteMapping("/deleteAllExpenses")
     public ResponseEntity deleteAllExpense() {
         try {
@@ -125,6 +132,7 @@ public class ExpenseController {
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('ROLE_USER', 'ROLE_ADMIN')")
     @GetMapping("/search/{text}")
     public List<Expense> search(@PathVariable String text) {
         return expenseService.searchByText(text);

@@ -16,8 +16,7 @@ import java.util.List;
 @Repository
 public interface RoomRepository extends MongoRepository<Room, String> {
     Page<Room> findAll(Pageable pageable);
-
-
+    Page<Room> findByUserId(String userId, Pageable pageable);
     @Query("{'$or': [ " +
             "{'name':   { $regex: ?0, $options: 'i' } }, " +
             "{'email':  { $regex: ?0, $options: 'i' } }, " +

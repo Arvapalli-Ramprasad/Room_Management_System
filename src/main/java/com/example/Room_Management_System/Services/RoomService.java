@@ -20,13 +20,10 @@ public class RoomService {
     @Autowired
     private RoomRepository roomRepository;
 
-    public Room addRoom(Room room) {
+    public Room addRoom(String userId,Room room) {
         String uuid = UUID.randomUUID().toString();
-        Optional<Room> existingRoom = roomRepository.findById(uuid);
-        if (existingRoom.isPresent()) {
-            throw new RuntimeException("Room with this ID already exists");
-        }
         room.setId(uuid);
+        room.setUserId(userId);
         String isValid = validateRoom(room);
         if (isValid == null) {
             if (room.getCreatedAt() == null) {
@@ -49,13 +46,13 @@ public class RoomService {
         return room;
     }
 
-    public Page<Room> getAllRooms(Integer limit, Integer offset){
+    public Page<Room> getAllRooms(String userId,Integer limit, Integer offset){
 
         Pageable pageable = PageRequest.of(
                 offset,
                 limit
         );
-        return roomRepository.findAll(pageable);
+        return roomRepository.findByUserId(userId,pageable);
 
     }
 
@@ -69,16 +66,16 @@ public class RoomService {
         return room;
     }
 
-    public Room updateRoom(Room room, String roomId) {
-        Room oldDetails = getRoom(roomId);
-
-        if (room != null) {
-            oldDetails.setRoomNumber(room.getRoomNumber());
-            oldDetails.setUpdatedAt(LocalDateTime.now());
-            return addRoom(oldDetails);
-        }
-        return oldDetails;
-    }
+//    public Room updateRoom(Room room, String roomId) {
+//        Room oldDetails = getRoom(roomId);
+//
+//        if (room != null) {
+//            oldDetails.setRoomNumber(room.getRoomNumber());
+//            oldDetails.setUpdatedAt(LocalDateTime.now());
+//            return addRoom(userId,oldDetails);
+//        }
+//        return oldDetails;
+//    }
 
     private String validateRoom(Room room) {
         StringBuilder missingFields = new StringBuilder();

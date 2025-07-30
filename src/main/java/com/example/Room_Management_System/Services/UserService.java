@@ -43,7 +43,7 @@ public class UserService {
 
 
         // 2. Generate and set user ID
-            user.setId(UUID.randomUUID().toString());
+        user.setId(UUID.randomUUID().toString());
 
         // 3. Set the user's roomId field
         user.setRoomId(roomId);

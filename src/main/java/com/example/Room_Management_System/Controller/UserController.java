@@ -6,17 +6,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.w3c.dom.stylesheets.LinkStyle;
 
 import java.util.List;
 
+@CrossOrigin(origins = "http://localhost:4200")
 @RestController
 @RequestMapping("user")
 public class UserController {
 
     @Autowired
     private UserService userService;
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @PostMapping("/add")
     public ResponseEntity addUser(@RequestBody User user, @RequestParam("roomId") String roomId){
         try{
@@ -27,6 +30,7 @@ public class UserController {
         }
     }
 
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @GetMapping("/getUser")
     public ResponseEntity getUser(@RequestParam("id") String userId ){
 
@@ -39,6 +43,7 @@ public class UserController {
 
     }
 
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @GetMapping("/getAllUsers")
     public ResponseEntity getUser(@RequestParam(required = false, defaultValue = "50") Integer limit, @RequestParam(required = false, defaultValue = "0") Integer offset){
 
@@ -55,7 +60,7 @@ public class UserController {
 
     }
 
-
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @DeleteMapping("/deleteUser")
     public ResponseEntity deleteUser(@RequestParam("id") String userId ){
         try{
@@ -66,7 +71,7 @@ public class UserController {
         }
 
     }
-
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @PutMapping("/updateUser")
     public ResponseEntity updateUser(@RequestBody User user, @RequestParam("id") String userId){
         try{
@@ -77,6 +82,7 @@ public class UserController {
         }
     }
 
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @DeleteMapping("/deleteAllUser")
     public ResponseEntity deleteAllUsers(){
         try{
@@ -87,7 +93,7 @@ public class UserController {
         }
 
     }
-
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @GetMapping("/search/{text}")
     public List<User> search(@PathVariable String text) {
         return userService.searchByText(text);
