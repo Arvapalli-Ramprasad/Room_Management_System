@@ -4,8 +4,6 @@ import com.example.Room_Management_System.JwtTokenUtil;
 import com.example.Room_Management_System.Models.Room;
 import com.example.Room_Management_System.Services.RoomService;
 import com.example.Room_Management_System.service.JwtService;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import org.apache.tomcat.util.http.parser.Authorization;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -29,16 +27,15 @@ public class RoomController {
     private JwtTokenUtil jwtTokenUtil;
 
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    @SecurityRequirement(name = "bearerAuth")
     @PostMapping("/add")
     public ResponseEntity addRoom(
             @RequestBody Room room,
             @RequestHeader("Authorization") String authHeader
     ){
         String token = jwtTokenUtil.extractTokenFromHeader(authHeader); // removes "Bearer "
-        String userId = jwtService.extractUserId(token);    // extracts userId from token
+        String createdBy = jwtService.extractUserId(token);    // extracts userId from token
         try{
-            Room response = roomService.addRoom(userId,room);
+            Room response = roomService.addRoom(createdBy,room);
             return new ResponseEntity(response, HttpStatus.OK);
         }catch(Exception e){
             return new ResponseEntity(e.getMessage(),HttpStatus.BAD_REQUEST);
@@ -47,10 +44,14 @@ public class RoomController {
 
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @GetMapping("/getRoom")
-    public ResponseEntity getRoom(@RequestParam("id") String roomId ){
-
+    public ResponseEntity getRoom(
+            @RequestParam("id") String roomId,
+            @RequestHeader("Authorization") String authHeader
+    ) {
+        String token = jwtTokenUtil.extractTokenFromHeader(authHeader); // removes "Bearer "
+        String createdBy = jwtService.extractUserId(token);    // extracts userId from token
         try {
-            Room response  = roomService.getRoom(roomId);
+            Room response  = roomService.getRoom(roomId,createdBy);
             return new ResponseEntity<>(response,HttpStatus.OK);
         }catch (Exception e){
             return new ResponseEntity<>("no Room Exist",HttpStatus.BAD_REQUEST);
@@ -66,9 +67,9 @@ public class RoomController {
             @RequestHeader("Authorization") String authHeader
     ){
         String token = jwtTokenUtil.extractTokenFromHeader(authHeader); // removes "Bearer "
-        String userId = jwtService.extractUserId(token);    // extracts userId from token
+        String createdBy = jwtService.extractUserId(token);    // extracts userId from token
         try {
-            Page<Room> rooms = roomService.getAllRooms(userId, limit, offset);
+            Page<Room> rooms = roomService.getAllRooms(createdBy, limit, offset);
             if (rooms.isEmpty()) {
                 return ResponseEntity.ok(Page.empty());
             }
@@ -83,9 +84,14 @@ public class RoomController {
 
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @DeleteMapping("/deleteRoom")
-    public ResponseEntity deleteRoom(@RequestParam("id") String roomId ){
+    public ResponseEntity deleteRoom(
+            @RequestParam("id") String roomId,
+            @RequestHeader("Authorization") String authHeader
+    ){
+        String token = jwtTokenUtil.extractTokenFromHeader(authHeader); // removes "Bearer "
+        String createdBy = jwtService.extractUserId(token);    // extracts userId from token
         try{
-            Room response  = roomService.deleteRoom(roomId);
+            Room response  = roomService.deleteRoom(roomId,createdBy);
             return new ResponseEntity<>(response,HttpStatus.OK);
         }catch(Exception e){
             return new ResponseEntity<>("No room in the db with the provided ID",HttpStatus.BAD_REQUEST);
@@ -93,22 +99,33 @@ public class RoomController {
 
     }
 
-//    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-//    @PutMapping("/updateRoom")
-//    public ResponseEntity updateRoom(@RequestBody Room room, @RequestParam("id") String roomId){
-//        try{
-//            Room response = roomService.updateRoom(room, roomId);
-//            return new ResponseEntity<>(response, HttpStatus.OK);
-//        }catch (Exception e){
-//            return new ResponseEntity<>("cannot update the field", HttpStatus.BAD_REQUEST);
-//        }
-//    }
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PutMapping("/updateRoom")
+    public ResponseEntity updateRoom(
+            @RequestBody Room room,
+            @RequestParam("id") String roomId,
+            @RequestHeader("Authorization") String authHeader
+
+    ){
+        String token = jwtTokenUtil.extractTokenFromHeader(authHeader); // removes "Bearer "
+        String createdBy = jwtService.extractUserId(token);    // extracts userId from token
+        try{
+            Room response = roomService.updateRoom(room, roomId, createdBy);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }catch (Exception e){
+            return new ResponseEntity<>("cannot update the field", HttpStatus.BAD_REQUEST);
+        }
+    }
 
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @DeleteMapping("/deleteAllRooms")
-    public ResponseEntity deleteAllRooms(){
+    public ResponseEntity deleteAllRooms(
+            @RequestHeader("Authorization") String authHeader
+    ){
+        String token = jwtTokenUtil.extractTokenFromHeader(authHeader); // removes "Bearer "
+        String createdBy = jwtService.extractUserId(token);    // extracts userId from token
         try{
-            String response = roomService.deleteAllRoom();
+            String response = roomService.deleteAllRoom(createdBy);
             return new ResponseEntity<>(response, HttpStatus.OK);
         }catch (Exception e){
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
@@ -117,8 +134,14 @@ public class RoomController {
 
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @GetMapping("/search/{text}")
-    public List<Room> search(@PathVariable String text) {
-        return roomService.searchByText(text);
+    public List<Room> search(
+            @PathVariable String text,
+            @RequestHeader("Authorization") String authHeader
+
+    ) {
+        String token = jwtTokenUtil.extractTokenFromHeader(authHeader); // removes "Bearer "
+        String createdBy = jwtService.extractUserId(token);    // extracts userId from token
+        return roomService.searchByText(text,createdBy);
     }
 
 }

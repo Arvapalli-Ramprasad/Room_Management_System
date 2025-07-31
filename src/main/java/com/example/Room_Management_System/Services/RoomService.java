@@ -1,7 +1,6 @@
 package com.example.Room_Management_System.Services;
 
 import com.example.Room_Management_System.Models.Room;
-import com.example.Room_Management_System.Models.User;
 import com.example.Room_Management_System.Repository.RoomRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -20,10 +19,10 @@ public class RoomService {
     @Autowired
     private RoomRepository roomRepository;
 
-    public Room addRoom(String userId,Room room) {
+    public Room addRoom(String createdBy,Room room) {
         String uuid = UUID.randomUUID().toString();
         room.setId(uuid);
-        room.setUserId(userId);
+        room.setCreatedBy(createdBy);
         String isValid = validateRoom(room);
         if (isValid == null) {
             if (room.getCreatedAt() == null) {
@@ -36,9 +35,9 @@ public class RoomService {
         } else throw new RuntimeException("Mandatory fields are missing: "+  isValid);
     }
 
-    public Room getRoom(String roomId) {
+    public Room getRoom(String roomId,String createdBy) {
 
-        Optional<Room> roomOpt = roomRepository.findById(roomId);
+        Optional<Room> roomOpt = roomRepository.findByIdAndCreatedBy(roomId,createdBy);
         if (!roomOpt.isPresent()) {
             throw new RuntimeException("Room not found");
         }
@@ -46,18 +45,18 @@ public class RoomService {
         return room;
     }
 
-    public Page<Room> getAllRooms(String userId,Integer limit, Integer offset){
+    public Page<Room> getAllRooms(String createdBy, Integer limit, Integer offset){
 
         Pageable pageable = PageRequest.of(
                 offset,
                 limit
         );
-        return roomRepository.findByUserId(userId,pageable);
+        return roomRepository.findByCreatedBy(createdBy, pageable);
 
     }
 
-    public Room deleteRoom(String roomId) {
-        Room room = getRoom(roomId);
+    public Room deleteRoom(String roomId,String createdBy) {
+        Room room = getRoom(roomId,createdBy);
 
         if (room != null) {
             roomRepository.deleteById(roomId);
@@ -66,16 +65,16 @@ public class RoomService {
         return room;
     }
 
-//    public Room updateRoom(Room room, String roomId) {
-//        Room oldDetails = getRoom(roomId);
-//
-//        if (room != null) {
-//            oldDetails.setRoomNumber(room.getRoomNumber());
-//            oldDetails.setUpdatedAt(LocalDateTime.now());
-//            return addRoom(userId,oldDetails);
-//        }
-//        return oldDetails;
-//    }
+    public Room updateRoom(Room room, String roomId, String createdBy) {
+        Room oldDetails = getRoom(roomId,createdBy);
+
+        if (room != null) {
+            oldDetails.setRoomNumber(room.getRoomNumber());
+            oldDetails.setUpdatedAt(LocalDateTime.now());
+            return addRoom(createdBy,oldDetails);
+        }
+        return oldDetails;
+    }
 
     private String validateRoom(Room room) {
         StringBuilder missingFields = new StringBuilder();
@@ -104,13 +103,13 @@ public class RoomService {
     }
 
 
-    public String deleteAllRoom() {
-         roomRepository.deleteAll();
+    public String deleteAllRoom(String createdBy) {
+         roomRepository.deleteByCreatedBy(createdBy);
          return "All rooms deleted Successfully";
     }
 
-    public List<Room> searchByText(String text){
-        return roomRepository.searchByText(text);
+    public List<Room> searchByText(String text, String createdBy){
+        return roomRepository.searchByText(text,createdBy);
     }
 
 }

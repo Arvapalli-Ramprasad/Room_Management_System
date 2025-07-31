@@ -20,7 +20,7 @@ import java.util.function.Function;
 public class JwtService {
 
     public static final String SECRET = "5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437";
-    public String generateToken(String userName, List roles, String userId) {
+    public String generateToken(String userName, List<String> roles, String userId) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role",roles);
         claims.put("userId",userId);
@@ -47,6 +47,11 @@ public class JwtService {
 
     public String extractUserId(String token) {
         return extractAllClaims(token).get("userId", String.class);
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<String> extractRoles(String token) {
+        return (List<String>) extractAllClaims(token).get("roles");
     }
 
     public Date extractExpiration(String token) {

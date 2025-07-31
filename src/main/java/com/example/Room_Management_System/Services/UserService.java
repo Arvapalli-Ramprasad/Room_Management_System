@@ -1,7 +1,9 @@
 package com.example.Room_Management_System.Services;
 
+import com.example.Room_Management_System.Models.InvitationToken;
 import com.example.Room_Management_System.Models.Room;
 import com.example.Room_Management_System.Models.User;
+import com.example.Room_Management_System.Repository.InvitationTokenRepository;
 import com.example.Room_Management_System.Repository.RoomRepository;
 import com.example.Room_Management_System.Repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,8 +35,11 @@ public class UserService {
     @Autowired
     private JavaMailSender javaMailSender;
 
-    public User addUser(User user, String roomId) {
-        Room room = roomService.getRoom(roomId);
+    @Autowired
+    private InvitationTokenRepository invitationTokenRepository;
+
+    public User addUser(User user, String roomId, String createdbY) {
+        Room room = roomService.getRoom(roomId, createdbY);
 
         //Validate room
         if(room.getStudentIds().size()>=room.getTotalCapacity()){
@@ -43,7 +48,10 @@ public class UserService {
 
 
         // 2. Generate and set user ID
-        user.setId(UUID.randomUUID().toString());
+
+        String userId = UUID.randomUUID().toString();
+        user.setId(userId);
+        user.setAddedUser(createdbY);
 
         // 3. Set the user's roomId field
         user.setRoomId(roomId);
@@ -63,25 +71,36 @@ public class UserService {
 
         boolean isPaymentCalculated = paymentCalculation(user,room);
 
-        SimpleMailMessage simpleMailMessage = new SimpleMailMessage();
+        // Generate token
+        String token = UUID.randomUUID().toString();
 
-        simpleMailMessage.setTo(user.getEmail());
-        simpleMailMessage.setReplyTo("springbootofficial@gmail.com");
-        simpleMailMessage.setSubject("Welcome to Room Number: " + room.getRoomNumber());
+        InvitationToken invitation = new InvitationToken();
+        invitation.setId(userId);
+        invitation.setMobileNumber(user.getPhoneNumber());
+        invitation.setUserName(user.getName());
+        invitation.setEmail(user.getEmail());
+        invitation.setToken(token);
+        invitation.setCreatedAt(LocalDateTime.now());
+        invitation.setExpiresAt(LocalDateTime.now().plusHours(24));
+        invitation.setUsed(false);
+        invitationTokenRepository.save(invitation);
 
-        simpleMailMessage.setText(
-                "Dear " + user.getName() + ",\n\n" +
-                        "Welcome to our Room Management System!\n\n" +
-                        "We're excited to let you know that you’ve been successfully allocated to Room Number: " + room.getRoomNumber() + ".\n" +
-                        "Your room is fully furnished and includes all the amenities you need for a comfortable stay.\n\n" +
-                        "As a welcome offer, we’re providing you a **20% discount** on your first month's rent!\n\n" +
-                        "If you have any questions or need assistance, feel free to reach out to our support team.\n\n" +
-                        "Thank you for choosing us.\n\n" +
-                        "Best regards,\n" +
-                        "Room Management Team"
+        // Send email with setup link
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(user.getEmail());
+        message.setReplyTo("springbootofficial@gmail.com");
+        message.setSubject("Complete Your Room Allocation - Set Password");
+
+        String setupLink = "http://localhost:8080/swagger-ui/index.html#/user-controller/setPassword?token=" + token;
+        message.setText(
+                "Hi " + user.getName() + ",\n\n" +
+                        "You've been invited to join Room " + room.getRoomNumber() + ".\n" +
+                        "Please click the link below to set your password and complete your registration:\n" +
+                        setupLink + "\n\n" +
+                        "This link is valid for 24 hours.\n\n" +
+                        "Thanks,\nRoom Management Team"
         );
-
-        javaMailSender.send(simpleMailMessage);
+        javaMailSender.send(message);
 
         // 4. Save the user
         User savedUser = userRepository.save(user);
@@ -124,33 +143,39 @@ public class UserService {
         return user;
     }
 
-    public Page<User> getAllUsers(Integer limit, Integer offset){
+    public Page<User> getAllUsers(String addedUserId, Integer limit, Integer offset){
 
         Pageable pageable = PageRequest.of(
                 offset,
                 limit
         );
-        return userRepository.findAll(pageable);
+        return userRepository.findByAddedUser(addedUserId,pageable);
 
     }
 
-    public User deleteUser(String userId){
+    public User deleteUser(String userId, String addedUser){
 
         User user = getUser(userId);
-        Room room = roomService.getRoom(user.getRoomId());
+        Room room = roomService.getRoom(user.getRoomId(),addedUser);
+
+        // Confirm that the user is in the room's student list
+        if (!room.getStudentIds().contains(userId)) {
+            throw new RuntimeException("User is not assigned to this room");
+        }
+
         room.getStudentIds().remove(userId);
         roomRepository.save(room);
         userRepository.deleteById(userId);
         return user;
     }
 
-    public User updateUser(User user, String userId){
+    public User updateUser(User user, String userId, String createdBy){
         User oldDetails = getUser(userId);
 
         if (user!=null){
             oldDetails.setName(user.getName());
             oldDetails.setUpdatedAt(LocalDateTime.now());
-            return addUser(oldDetails, oldDetails.getRoomId());
+            return addUser(oldDetails, oldDetails.getRoomId(),createdBy);
         }
         return oldDetails;
     }
@@ -201,13 +226,13 @@ public class UserService {
         return null;
     }
 
-    public String deleteAllUsers() {
-        userRepository.deleteAll();
+    public String deleteAllUsers(String addedUser) {
+        userRepository.deleteAllByAddedUser(addedUser);
         return "All Users Deleted Successfully";
     }
 
-    public List<User> searchByText(String text){
-        return userRepository.searchByText(text);
+    public List<User> searchByText(String text, String addedUser){
+        return userRepository.searchByText(text, addedUser);
     }
 
 }

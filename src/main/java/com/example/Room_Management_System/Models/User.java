@@ -38,10 +38,12 @@ public class User {
 
     private LocalDateTime updatedAt;
 
+    private String addedUser;
+
     public User() {
     }
 
-    public User(String id, String name, String email, String phoneNumber, String gender, LocalDate dateOfBirth, String address, String emergencyContact, String guardianName, String guardianContact, String photoUrl, String roomId, LocalDate moveInDate, LocalDate moveOutDate, Double monthlyPayment, Double totalPaid, Double pendingAmount, Boolean active, List<String> expenseIds, String notes, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public User(String id, String name, String email, String phoneNumber, String gender, LocalDate dateOfBirth, String address, String emergencyContact, String guardianName, String guardianContact, String photoUrl, String roomId, LocalDate moveInDate, LocalDate moveOutDate, Double monthlyPayment, Double totalPaid, Double pendingAmount, Boolean active, List<String> expenseIds, String notes, LocalDateTime createdAt, LocalDateTime updatedAt, String addedUser) {
         this.id = id;
         this.name = name;
         this.email = email;
@@ -64,6 +66,7 @@ public class User {
         this.notes = notes;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.addedUser = addedUser;
     }
 
     public String getId() {
@@ -240,5 +243,13 @@ public class User {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getAddedUser() {
+        return addedUser;
+    }
+
+    public void setAddedUser(String addedUser) {
+        this.addedUser = addedUser;
     }
 }
