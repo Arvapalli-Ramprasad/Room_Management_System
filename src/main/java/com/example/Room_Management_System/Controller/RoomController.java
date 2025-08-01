@@ -42,16 +42,20 @@ public class RoomController {
         }
     }
 
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_USER')")
     @GetMapping("/getRoom")
     public ResponseEntity getRoom(
             @RequestParam("id") String roomId,
             @RequestHeader("Authorization") String authHeader
     ) {
-        String token = jwtTokenUtil.extractTokenFromHeader(authHeader); // removes "Bearer "
-        String createdBy = jwtService.extractUserId(token);    // extracts userId from token
         try {
-            Room response  = roomService.getRoom(roomId,createdBy);
+            String token = jwtTokenUtil.extractTokenFromHeader(authHeader); // removes "Bearer "
+            String createdBy = jwtService.extractUserId(token);    // extracts userId from token
+            List<String> roles = jwtService.extractRoles(token);
+
+            System.out.println("***************"+ roles);
+
+            Room response  = roomService.getRoom(roomId,createdBy,roles);
             return new ResponseEntity<>(response,HttpStatus.OK);
         }catch (Exception e){
             return new ResponseEntity<>("no Room Exist",HttpStatus.BAD_REQUEST);
@@ -68,6 +72,7 @@ public class RoomController {
     ){
         String token = jwtTokenUtil.extractTokenFromHeader(authHeader); // removes "Bearer "
         String createdBy = jwtService.extractUserId(token);    // extracts userId from token
+
         try {
             Page<Room> rooms = roomService.getAllRooms(createdBy, limit, offset);
             if (rooms.isEmpty()) {

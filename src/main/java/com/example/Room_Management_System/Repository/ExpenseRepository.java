@@ -11,4 +11,7 @@ import org.springframework.stereotype.Repository;
 public interface ExpenseRepository extends MongoRepository<Expense,String> {
     Page<Expense> findAll(Pageable pageable);
 
+    Page<Expense> findByRoomId(String roomId, Pageable pageable);
+
+
 }

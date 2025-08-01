@@ -95,23 +95,16 @@ public class UserController {
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_USER')")
     @GetMapping("/getUser")
     public ResponseEntity getUser(
-            @RequestParam("id") String userId,
             @RequestHeader("Authorization") String authHeader
     ){
         try {
             String token = jwtTokenUtil.extractTokenFromHeader(authHeader);
             String tokenUserId = jwtService.extractUserId(token);
             List<String> roles = jwtService.extractRoles(token);
-
-            // Allow access if admin or if user is accessing their own info
-            if (!roles.contains("ROLE_ADMIN") && !tokenUserId.equals(userId)) {
-                return new ResponseEntity<>("Unauthorized Role", HttpStatus.FORBIDDEN);
-            }
-
-            User response  = userService.getUser(userId);
+            User response  = userService.getUser(tokenUserId);
             return new ResponseEntity<>(response,HttpStatus.OK);
         }catch (Exception e){
-            return new ResponseEntity<>("no User Exist",HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(e.getMessage(),HttpStatus.BAD_REQUEST);
         }
 
     }

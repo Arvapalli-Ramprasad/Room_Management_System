@@ -149,7 +149,7 @@ public class ExpenseService {
         return expenseOpt.get();
     }
 
-    public Expense updateExpense(Expense expense, String expenseId) {
+    public Expense updateExpense(Expense expense, String expenseId, String userId) {
         Optional<Expense> existingExpenseOpt = expenseRepository.findById(expenseId);
 
         if (!existingExpenseOpt.isPresent()) {
@@ -157,6 +157,10 @@ public class ExpenseService {
         }
 
         Expense existingExpense = existingExpenseOpt.get();
+
+        if(!existingExpense.getUserId().equals(userId)){
+            throw  new RuntimeException("You can only update your own expense");
+        }
         existingExpense.setAmount(expense.getAmount());
         existingExpense.setDescription(expense.getDescription());
         existingExpense.setCategory(expense.getCategory());
@@ -195,13 +199,20 @@ public class ExpenseService {
 
 
 
-    public String deleteExpense(String expenseId) {
+    public String deleteExpense(String expenseId, String userId) {
         Optional<Expense> expenseOpt = expenseRepository.findById(expenseId);
         if (!expenseOpt.isPresent()) {
             throw new RuntimeException("Expense not found with the provided expenseId");
         }
 
         Expense expense = expenseOpt.get();
+
+        //validate the user
+        if(!expense.getUserId().equals(userId)){
+            throw new RuntimeException("You can only update your own expense");
+        }
+
+
         // Remove from user's expense list
         Optional<User> userOpt = userRepository.findById(expense.getUserId());
         if (userOpt.isPresent()) {
@@ -252,6 +263,11 @@ public class ExpenseService {
         return expenseRepository.findAll(pageable);
 
     }
+
+    public Page<Expense> getExpensesByRoomId(String roomId, Pageable pageable) {
+        return expenseRepository.findByRoomId(roomId, pageable);
+    }
+
 
     public List<Expense> searchByText(String text) {
         // Create regex pattern, case-insensitive

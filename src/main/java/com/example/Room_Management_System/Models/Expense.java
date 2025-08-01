@@ -1,6 +1,8 @@
 package com.example.Room_Management_System.Models;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDate;
@@ -8,6 +10,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Document(collection = "expenses")
+@CompoundIndexes({
+        @CompoundIndex(name = "roomId_index", def = "{'roomId': 1}")
+})
 public class Expense {
     @Id
     private String id;

@@ -51,7 +51,7 @@ public class JwtService {
 
     @SuppressWarnings("unchecked")
     public List<String> extractRoles(String token) {
-        return (List<String>) extractAllClaims(token).get("roles");
+        return (List<String>) extractAllClaims(token).get("role");
     }
 
     public Date extractExpiration(String token) {

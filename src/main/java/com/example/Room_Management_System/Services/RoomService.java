@@ -35,6 +35,28 @@ public class RoomService {
         } else throw new RuntimeException("Mandatory fields are missing: "+  isValid);
     }
 
+    public Room getRoom(String roomId,String createdBy, List<String> roles) {
+
+        Optional<Room> roomOpt = roomRepository.findById(roomId);
+        System.out.println(roomOpt.get());
+        if (!roomOpt.isPresent()) {
+            throw new RuntimeException("Room not found");
+        }
+        Room room = roomOpt.get();
+
+        if(roles.contains("ROLE_ADMIN")){
+            if(!room.getCreatedBy().equals(createdBy)){
+                throw new RuntimeException("Access Denied for this room (Admin Mismatch)");
+            }
+        }
+        else if(roles.contains("ROLE_USER")){
+            if(!room.getStudentIds().contains(createdBy)){
+                throw new RuntimeException("Access Denied : User not in the Room");
+            }
+        }
+        return room;
+    }
+
     public Room getRoom(String roomId,String createdBy) {
 
         Optional<Room> roomOpt = roomRepository.findByIdAndCreatedBy(roomId,createdBy);
