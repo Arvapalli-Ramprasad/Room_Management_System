@@ -17,9 +17,12 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
+@CrossOrigin(origins = "http://localhost:4200")
 @RestController
 @RequestMapping("/auth")
 public class User {
@@ -39,8 +42,16 @@ public class User {
     }
 
     @PostMapping("/addNewUser")
-    public String addNewUser(@RequestBody UserInfo userInfo) {
-        return service.addUser(userInfo);
+    public ResponseEntity<Map<String, String>> addNewUser(@RequestBody UserInfo userInfo) {
+        String message = service.addUser(userInfo);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", message);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
+
     }
 
     @GetMapping("/getAllUsers")
@@ -72,7 +83,7 @@ public class User {
     }
 
     @PostMapping("/generateToken")
-    public String authenticateAndGetToken(@RequestBody AuthRequest authRequest) {
+    public ResponseEntity<Map<String, String>> authenticateAndGetToken(@RequestBody AuthRequest authRequest) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword())
         );
@@ -91,7 +102,12 @@ public class User {
                     .collect(Collectors.toList());
 
 
-            return jwtService.generateToken(authRequest.getUsername(), roles, user.getId());
+            String token =  jwtService.generateToken(authRequest.getUsername(), roles, user.getId());
+
+            Map<String, String> response = new HashMap<>();
+            response.put("token", token);
+            return ResponseEntity.ok(response);
+
         } else {
             throw new UsernameNotFoundException("Invalid user request!");
         }
