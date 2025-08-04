@@ -6,6 +6,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -43,7 +44,11 @@ public class Room {
     private String createdBy;
 
     public Room() {
+        this.studentIds = new ArrayList<>();
+        this.amenities = new ArrayList<>();
+        this.photos = new ArrayList<>();
     }
+
 
     public Room(String id, String roomNumber, String floorNumber, String buildingName, Integer totalCapacity, Integer currentOccupancy, Double monthlyRent, Double totalAmountToBeCollected, Double totalAmountCollected, Double balance, Double securityDeposit, String address, List<String> amenities, List<String> studentIds, String notes, Boolean active, LocalDateTime createdAt, LocalDateTime updatedAt, String maintenanceStatus, String roomType, Boolean sharedBathroom, String furnishingStatus, String ownerContact, LocalDateTime rentDueDate, LocalDate lastInspectionDate, List<String> photos, String createdBy) {
         this.id = id;
