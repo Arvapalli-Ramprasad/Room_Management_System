@@ -116,7 +116,7 @@ public class ExpenseController {
     }
 
     @PreAuthorize("hasAnyAuthority('ROLE_USER', 'ROLE_ADMIN')")
-    @GetMapping("/user/{userId}")
+    @GetMapping("/userExpenses")
     public ResponseEntity getUserExpenses(
             @RequestHeader("Authorization") String autheHeader
     ) {

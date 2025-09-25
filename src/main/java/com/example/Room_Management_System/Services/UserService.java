@@ -91,12 +91,12 @@ public class UserService {
         message.setReplyTo("springbootofficial@gmail.com");
         message.setSubject("Complete Your Room Allocation - Set Password");
 
-        String setupLink = "http://localhost:8080/swagger-ui/index.html#/user-controller/setPassword?token=" + token;
+        String frontendUrl = "http://localhost:4200/#/setup-password?token=" + token + "&email=" + user.getEmail();
         message.setText(
                 "Hi " + user.getName() + ",\n\n" +
                         "You've been invited to join Room " + room.getRoomNumber() + ".\n" +
                         "Please click the link below to set your password and complete your registration:\n" +
-                        setupLink + "\n\n" +
+                        frontendUrl + "\n\n" +
                         "This link is valid for 24 hours.\n\n" +
                         "Thanks,\nRoom Management Team"
         );

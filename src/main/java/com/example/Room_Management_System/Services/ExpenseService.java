@@ -99,9 +99,7 @@ public class ExpenseService {
         if (expense.getDescription() == null || expense.getDescription().trim().isEmpty()) {
             missingFields.append("description, ");
         }
-        if (expense.getDate() == null) {
-            missingFields.append("date, ");
-        }
+
         if (expense.getCategory() == null || expense.getCategory().trim().isEmpty()) {
             missingFields.append("category, ");
         }
