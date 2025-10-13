@@ -134,6 +134,11 @@ public class ExpenseService {
                 expenseIds = new ArrayList<>();
             }
             expenseIds.add(expense.getId());
+            if(user.getTotalExpences()==null){
+                user.setTotalExpences(expense.getAmount());
+            }else{
+                user.setTotalExpences(user.getTotalExpences()+expense.getAmount());
+            }
             user.setExpenseIds(expenseIds);
             userRepository.save(user);
         }
