@@ -4,6 +4,7 @@ import com.example.Room_Management_System.Models.Room;
 import com.example.Room_Management_System.Models.User;
 import com.example.Room_Management_System.Repository.RoomRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -25,6 +26,10 @@ public class RoomService {
 
     @Autowired
     private S3Service s3Service;
+
+    @Value("${aws.s3.bucket}")
+    private String bucketName;
+
 
     public Room addRoom(String createdBy,Room room) {
         String uuid = UUID.randomUUID().toString();
@@ -177,7 +182,7 @@ public class RoomService {
                 String s3Key = s3Service.uploadFile(file, "rooms/" + roomId);
 
                 // Optionally, build a public URL (if your bucket allows public access)
-                String fileUrl = "https://" + getBucketName() + ".s3.amazonaws.com/" + s3Key;
+                String fileUrl = "https://" + bucketName + ".s3.amazonaws.com/" + s3Key;
 
                 photoUrls.add(fileUrl);
             } catch (IOException e) {
@@ -192,13 +197,6 @@ public class RoomService {
 
         return photoUrls;
     }
-
-    public String getBucketName() {
-        return System.getenv("AWS_S3_BUCKET");
-    }
-
-
-
 
 
     public List<String> getRoomPhotos(String roomId){
