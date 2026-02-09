@@ -42,7 +42,17 @@ public class SecurityConfig {
                 .and()
                 .csrf().disable()
                 .authorizeHttpRequests()
-                .requestMatchers("/auth/welcome", "/auth/addNewUser", "/auth/getAllUsers","/auth/generateToken", "/v3/api-docs/**","/swagger-ui/**","/swagger-ui.html","user/set-password").permitAll()
+                .requestMatchers(
+                        "/auth/welcome",
+                        "/auth/addNewUser",
+                        "/auth/getAllUsers",
+                        "/auth/generateToken",
+                        "/v3/api-docs/**",
+                        "/swagger-ui/**",
+                        "/swagger-ui.html",
+                        "user/set-password",
+                        "/uploads/**"
+                ).permitAll()
                 .and()
                 .authorizeHttpRequests().requestMatchers("/rooms/**").authenticated()
                 .and()

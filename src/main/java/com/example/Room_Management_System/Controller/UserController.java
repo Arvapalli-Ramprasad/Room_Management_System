@@ -1,6 +1,7 @@
 package com.example.Room_Management_System.Controller;
 
 import com.example.Room_Management_System.JwtTokenUtil;
+import com.example.Room_Management_System.Models.Activity;
 import com.example.Room_Management_System.Models.InvitationToken;
 import com.example.Room_Management_System.Models.User;
 import com.example.Room_Management_System.Repository.InvitationTokenRepository;
@@ -85,6 +86,23 @@ public class UserController {
 
         try{
             User response = userService.addUser(user ,roomId, createdBy);
+            return new ResponseEntity(response, HttpStatus.OK);
+        }catch(Exception e){
+            return new ResponseEntity(e.getMessage(),HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_USER')")
+    @PostMapping("/activity")
+    public ResponseEntity AssociateActivityWithUser(
+            @RequestBody Activity activity,
+            @RequestHeader("Authorization") String authHeader
+    ){
+        String token = jwtTokenUtil.extractTokenFromHeader(authHeader); // removes "Bearer "
+        String createdBy = jwtService.extractUserId(token);    // extracts userId from token
+
+        try{
+            String response = userService.associateActivityWithUser(activity,createdBy);
             return new ResponseEntity(response, HttpStatus.OK);
         }catch(Exception e){
             return new ResponseEntity(e.getMessage(),HttpStatus.BAD_REQUEST);

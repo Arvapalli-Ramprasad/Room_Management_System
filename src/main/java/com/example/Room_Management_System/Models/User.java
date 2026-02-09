@@ -27,10 +27,21 @@ public class User {
     private LocalDate moveOutDate;
     private Double monthlyPayment; // e.g. 3000
     private Double totalPaid;
+
+    public List<Activity> getActivities() {
+        return activities;
+    }
+
+    public void setActivities(List<Activity> activities) {
+        this.activities = activities;
+    }
+
     private Double pendingAmount;
     private Boolean active;
 
     private List<String> expenseIds; // List of Expense IDs
+
+    private List<Activity> activities;
 
     private Double totalExpences;
 
@@ -45,7 +56,7 @@ public class User {
     public User() {
     }
 
-    public User(String id, String name, String email, String phoneNumber, String gender, LocalDate dateOfBirth, String address, String emergencyContact, String guardianName, String guardianContact, String photoUrl, String roomId, LocalDate moveInDate, LocalDate moveOutDate, Double monthlyPayment, Double totalPaid, Double pendingAmount, Boolean active, List<String> expenseIds, Double totalExpences,  String notes, LocalDateTime createdAt, LocalDateTime updatedAt, String addedUser) {
+    public User(String id, String name, String email, String phoneNumber, String gender, LocalDate dateOfBirth, String address, String emergencyContact, String guardianName, String guardianContact, String photoUrl, String roomId, LocalDate moveInDate, LocalDate moveOutDate, Double monthlyPayment, Double totalPaid, Double pendingAmount, Boolean active, List<String> expenseIds,List<Activity> activities, Double totalExpences,  String notes, LocalDateTime createdAt, LocalDateTime updatedAt, String addedUser) {
         this.id = id;
         this.name = name;
         this.email = email;
@@ -65,6 +76,7 @@ public class User {
         this.pendingAmount = pendingAmount;
         this.active = active;
         this.expenseIds = expenseIds;
+        this.activities = activities;
         this.totalExpences = totalExpences;
         this.notes = notes;
         this.createdAt = createdAt;

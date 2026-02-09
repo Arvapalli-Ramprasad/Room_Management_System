@@ -1,23 +1,30 @@
 package com.example.Room_Management_System.Services;
 
 import com.example.Room_Management_System.Models.Room;
+import com.example.Room_Management_System.Models.User;
 import com.example.Room_Management_System.Repository.RoomRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class RoomService {
     @Autowired
     private RoomRepository roomRepository;
+
+    @Autowired
+    private FileStorageService fileStorageService;
+
+    @Autowired
+    private S3Service s3Service;
 
     public Room addRoom(String createdBy,Room room) {
         String uuid = UUID.randomUUID().toString();
@@ -134,4 +141,70 @@ public class RoomService {
         return roomRepository.searchByText(text,createdBy);
     }
 
+//    public List<String> uploadRoomPhotos(String roomId, List<MultipartFile> files) {
+//
+//        Room room = roomRepository.findById(roomId)
+//                .orElseThrow(() -> new RuntimeException("Room not found"));
+//
+//        List<String> photoUrls = room.getPhotos();
+//
+//        for (MultipartFile file : files) {
+//            try {
+//                String url = fileStorageService.storeFile(file);
+//                photoUrls.add(url);
+//            } catch (IOException e) {
+//                throw new RuntimeException("Failed to upload photo", e);
+//            }
+//        }
+//
+//        room.setPhotos(photoUrls);
+//        room.setUpdatedAt(LocalDateTime.now());
+//
+//        roomRepository.save(room);
+//
+//        return photoUrls;
+//    }
+
+    public List<String> uploadRoomPhotos(String roomId, List<MultipartFile> files) {
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("Room not found"));
+
+        List<String> photoUrls = room.getPhotos() != null ? new ArrayList<>(room.getPhotos()) : new ArrayList<>();
+
+        for (MultipartFile file : files) {
+            try {
+                // Upload to S3 in a specific folder, e.g., "rooms/{roomId}"
+                String s3Key = s3Service.uploadFile(file, "rooms/" + roomId);
+
+                // Optionally, build a public URL (if your bucket allows public access)
+                String fileUrl = "https://" + getBucketName() + ".s3.amazonaws.com/" + s3Key;
+
+                photoUrls.add(fileUrl);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to upload photo", e);
+            }
+        }
+
+        room.setPhotos(photoUrls);
+        room.setUpdatedAt(LocalDateTime.now());
+
+        roomRepository.save(room);
+
+        return photoUrls;
+    }
+
+    public String getBucketName() {
+        return System.getenv("AWS_S3_BUCKET");
+    }
+
+
+
+
+
+    public List<String> getRoomPhotos(String roomId){
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("Room not found"));
+
+        return room.getPhotos();
+    }
 }

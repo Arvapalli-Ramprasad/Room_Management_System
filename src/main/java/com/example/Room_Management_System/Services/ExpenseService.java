@@ -224,6 +224,7 @@ public class ExpenseService {
             if (expenseIds != null) {
                 expenseIds.remove(expenseId);
                 user.setExpenseIds(expenseIds);
+                user.setTotalExpences(user.getTotalExpences()-expense.getAmount());
                 userRepository.save(user);
             }
         }
@@ -272,16 +273,27 @@ public class ExpenseService {
     }
 
 
-    public List<Expense> searchByText(String text) {
-        // Create regex pattern, case-insensitive
-        Pattern regex = Pattern.compile(text, Pattern.CASE_INSENSITIVE);
-        // Build OR criteria
-        Criteria criteria = new Criteria().orOperator(
-                Criteria.where("category").regex(regex),
-                Criteria.where("userName").regex(regex),
-                Criteria.where("roomNumber").regex(regex)
+    public List<Expense> searchByText(String text, String roomId) {
+        Pattern regex = Pattern.compile(Pattern.quote(text), Pattern.CASE_INSENSITIVE);
+
+        List<Criteria> orCriteria = new ArrayList<>();
+
+        // String fields (regex search)
+        orCriteria.add(Criteria.where("description").regex(regex));
+        orCriteria.add(Criteria.where("category").regex(regex));
+        orCriteria.add(Criteria.where("paymentMethod").regex(regex));
+
+        // If text is a number → search amount
+        if (text.matches("\\d+(\\.\\d+)?")) {
+            orCriteria.add(Criteria.where("amount").is(Double.parseDouble(text)));
+        }
+
+        Criteria finalCriteria = new Criteria().andOperator(
+                Criteria.where("roomId").is(roomId),
+                new Criteria().orOperator(orCriteria.toArray(new Criteria[0]))
         );
-        Query query = new Query(criteria);
+
+        Query query = new Query(finalCriteria);
         return mongoTemplate.find(query, Expense.class);
     }
 

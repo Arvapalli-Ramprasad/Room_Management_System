@@ -10,7 +10,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -105,10 +108,10 @@ public class RoomController {
     }
 
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    @PutMapping("/updateRoom")
+    @PutMapping("/updateRoom/{Id}")
     public ResponseEntity updateRoom(
+            @PathVariable("Id") String roomId,
             @RequestBody Room room,
-            @RequestParam("id") String roomId,
             @RequestHeader("Authorization") String authHeader
 
     ){
@@ -148,5 +151,61 @@ public class RoomController {
         String createdBy = jwtService.extractUserId(token);    // extracts userId from token
         return roomService.searchByText(text,createdBy);
     }
+
+
+
+
+        // ✅ Upload one or multiple photos
+        @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+        @PostMapping("/{roomId}/photos")
+        public ResponseEntity<?> uploadRoomPhotos(
+                @PathVariable String roomId,
+                @RequestParam("files") List<MultipartFile> files) throws IOException {
+
+//            Room room = roomRepository.findById(roomId)
+//                    .orElseThrow(() -> new RuntimeException("Room not found"));
+
+//            List<String> photoUrls = room.getPhotos();
+
+            List<String> photoUrls = roomService.uploadRoomPhotos(roomId, files);
+
+//            for (MultipartFile file : files) {
+//                String url = fileStorageService.storeFile(file);
+//                photoUrls.add(url);
+//            }
+//
+//            room.setPhotos(photoUrls);
+//            room.setUpdatedAt(LocalDateTime.now());
+//
+//            roomRepository.save(room);
+
+            return ResponseEntity.ok(photoUrls);
+        }
+
+        // ✅ Get photos
+        @GetMapping("/{roomId}/photos")
+        public List<String> getRoomPhotos(@PathVariable String roomId) {
+
+            List<String> photoUrls = roomService.getRoomPhotos(roomId);
+
+            return photoUrls;
+
+        }
+
+        // ✅ Delete a photo
+//        @DeleteMapping("/{roomId}/photos")
+//        public ResponseEntity<?> deleteRoomPhoto(
+//                @PathVariable String roomId,
+//                @RequestParam String photoUrl) {
+//
+//            Room room = roomRepository.findById(roomId)
+//                    .orElseThrow(() -> new RuntimeException("Room not found"));
+//
+//            room.getPhotos().remove(photoUrl);
+//            roomRepository.save(room);
+//
+//            return ResponseEntity.ok("Photo removed");
+//        }
+
 
 }

@@ -181,7 +181,7 @@ public class ExpenseController {
 
     @PreAuthorize("hasAnyAuthority('ROLE_USER', 'ROLE_ADMIN')")
     @DeleteMapping("/{id}")
-    public ResponseEntity deleteExpense(
+    public ResponseEntity<?> deleteExpense(
             @PathVariable String id,
             @RequestHeader("Authorization") String autheHeader
     ) {
@@ -190,7 +190,7 @@ public class ExpenseController {
             String userId = jwtService.extractUserId(token);
 
             String deletedExpense =  expenseService.deleteExpense(id,userId);
-            return new ResponseEntity<>(deletedExpense,HttpStatus.GONE);
+            return new ResponseEntity<>("Expenxe deleted Successfully",HttpStatus.OK);
         } catch (RuntimeException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
@@ -209,9 +209,21 @@ public class ExpenseController {
 
     @PreAuthorize("hasAnyAuthority('ROLE_USER', 'ROLE_ADMIN')")
     @GetMapping("/search/{text}")
-    public List<Expense> search(@PathVariable String text) {
-        return expenseService.searchByText(text);
+    public List<Expense> search(
+            @PathVariable String text,
+            @RequestHeader("Authorization") String autheHeader
+    ) {
+        String token = jwtTokenUtil.extractTokenFromHeader(autheHeader);
+        String userId = jwtService.extractUserId(token);
+
+        User user = userService.getUser(userId);
+
+        // Only allow access to the room assigned to the user
+        String userRoomId = user.getRoomId();
+
+        return expenseService.searchByText(text, userRoomId);
     }
+
 //
 //    @GetMapping("/stats/{roomId}")
 //    public ResponseEntity<ExpenseStats> getExpenseStats(@PathVariable String roomId) {

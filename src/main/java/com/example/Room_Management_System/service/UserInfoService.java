@@ -1,6 +1,5 @@
 package com.example.Room_Management_System.service;
 
-import com.example.Room_Management_System.Models.User;
 import com.example.Room_Management_System.Repository.UserInfoRepository;
 import com.example.Room_Management_System.entity.UserInfo;
 import org.springframework.beans.factory.annotation.Autowired;

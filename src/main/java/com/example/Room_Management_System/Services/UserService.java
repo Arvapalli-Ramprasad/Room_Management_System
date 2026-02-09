@@ -1,5 +1,6 @@
 package com.example.Room_Management_System.Services;
 
+import com.example.Room_Management_System.Models.Activity;
 import com.example.Room_Management_System.Models.InvitationToken;
 import com.example.Room_Management_System.Models.Room;
 import com.example.Room_Management_System.Models.User;
@@ -119,6 +120,21 @@ public class UserService {
 
         return savedUser;
 
+    }
+
+    public  String associateActivityWithUser(Activity activity, String userId){
+        User user = getUser(userId);
+        if(user.getActivities()==null){
+            List<Activity> activities= new ArrayList<>();
+            activities.add(activity);
+            user.setActivities(activities);
+        }else{
+            user.getActivities().add(activity);
+        }
+
+        userRepository.save(user);
+
+        return "Activity associated successfully";
     }
 
     private boolean paymentCalculation(User user, Room room){
