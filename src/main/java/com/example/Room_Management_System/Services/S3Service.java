@@ -1,5 +1,6 @@
 package com.example.Room_Management_System.Services;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -16,6 +17,9 @@ public class S3Service {
     private final S3Client s3Client;
     private final S3Presigner presigner;
 
+    @Value("${aws.s3.bucket}")
+    private String bucketName;
+
     public S3Service(S3Client s3Client, S3Presigner presigner) {
         this.s3Client = s3Client;
         this.presigner = presigner;
@@ -26,7 +30,7 @@ public class S3Service {
         String key = folder + "/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
 
         PutObjectRequest request = PutObjectRequest.builder()
-                .bucket(System.getenv("AWS_S3_BUCKET"))
+                .bucket(bucketName)
                 .key(key)
                 .contentType(file.getContentType())
                 .build();
