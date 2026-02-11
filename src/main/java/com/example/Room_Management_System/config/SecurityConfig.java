@@ -20,6 +20,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+//later added
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import java.util.List;
+
 @Configuration                 //Marks this class as a Spring configuration class.
 @EnableWebSecurity             //Enables Spring Security’s web security features.
 @EnableMethodSecurity          //Allows you to use annotations like @PreAuthorize on your controller methods
@@ -34,43 +42,38 @@ public class SecurityConfig {
     public UserDetailsService userDetailsService() {
         return new UserInfoService();
     }
-    // Configuring HttpSecurity
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                .cors()
-                .and()
-                .csrf().disable()
-                .authorizeHttpRequests()
-                .requestMatchers(
-                        "/auth/welcome",
-                        "/auth/addNewUser",
-                        "/auth/getAllUsers",
-                        "/auth/generateToken",
-                        "/v3/api-docs/**",
-                        "/swagger-ui/**",
-                        "/swagger-ui.html",
-                        "user/set-password",
-                        "/uploads/**"
-                ).permitAll()
-                .and()
-                .authorizeHttpRequests().requestMatchers("/rooms/**").authenticated()
-                .and()
-                .authorizeHttpRequests().requestMatchers("/user/**").authenticated()
-                .and()
-                .authorizeHttpRequests().requestMatchers("/expences/**").authenticated()
-                .and()
-                .authorizeHttpRequests().requestMatchers("/auth/user/**").authenticated()
-                .and()
-                .authorizeHttpRequests().requestMatchers("/auth/admin/**").authenticated()
-                .and()
-                .sessionManagement()
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                .and()
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/auth/welcome",
+                                "/auth/addNewUser",
+                                "/auth/getAllUsers",
+                                "/auth/generateToken",
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/user/set-password",
+                                "/uploads/**"
+                        ).permitAll()
+                        .requestMatchers(
+                                "/rooms/**",
+                                "/user/**",
+                                "/expences/**",
+                                "/auth/user/**",
+                                "/auth/admin/**"
+                        ).authenticated()
+                        .anyRequest().authenticated()
+                )
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
+
     // Password Encoding
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -87,4 +90,28 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+
+        configuration.setAllowedOrigins(List.of(
+                "https://roommanager.in",
+                "https://www.roommanager.in",
+                "http://localhost:4200"
+        ));
+
+        configuration.setAllowedMethods(List.of(
+                "GET", "POST", "PUT", "DELETE", "OPTIONS"
+        ));
+
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+
+        return source;
+    }
+
 }
