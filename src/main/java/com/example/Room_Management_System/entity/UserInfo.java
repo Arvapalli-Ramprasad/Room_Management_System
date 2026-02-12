@@ -4,6 +4,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.ArrayList;
+import java.util.List;
 
 @Document(collection = "userInfo")
 public class UserInfo {
@@ -14,18 +15,32 @@ public class UserInfo {
     private String email;
     private String password;
     private String mobileNumber;
+    private List<String> expenseIds; // List of Expense IDs
+    private Double totalExpences;
     private String roles;
 
+
     public UserInfo() {
+
     }
 
-    public UserInfo(String id, String name, String email, String password, String mobileNumber, String roles) {
+    public UserInfo(String id, String name, String email, String password, String mobileNumber, List<String> expenseIds,Double totalExpences, String roles) {
         this.id = id;
         this.name = name;
         this.email = email;
         this.password = password;
         this.mobileNumber = mobileNumber;
+        this.expenseIds = expenseIds;
+        this.totalExpences = totalExpences;
         this.roles = roles;
+    }
+
+    public Double getTotalExpences() {
+        return totalExpences;
+    }
+
+    public void setTotalExpences(Double totalExpences) {
+        this.totalExpences = totalExpences;
     }
 
     public String getId() {
@@ -66,6 +81,14 @@ public class UserInfo {
 
     public void setMobileNumber(String mobileNumber) {
         this.mobileNumber = mobileNumber;
+    }
+
+    public List<String> getExpenseIds() {
+        return expenseIds;
+    }
+
+    public void setExpenseIds(List<String> expenseIds) {
+        this.expenseIds = expenseIds;
     }
 
     public String getRoles() {

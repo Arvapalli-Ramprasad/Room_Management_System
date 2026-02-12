@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface UserInfoRepository extends MongoRepository<UserInfo, Integer> {
+public interface UserInfoRepository extends MongoRepository<UserInfo, String> {
 
     Page<UserInfo> findAll(Pageable pageable);
 

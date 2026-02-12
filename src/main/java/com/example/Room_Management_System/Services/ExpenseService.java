@@ -5,8 +5,10 @@ import com.example.Room_Management_System.Models.Room;
 import com.example.Room_Management_System.Models.User;
 import com.example.Room_Management_System.Repository.ExpenseRepository;
 import com.example.Room_Management_System.Repository.RoomRepository;
+import com.example.Room_Management_System.Repository.UserInfoRepository;
 import com.example.Room_Management_System.Repository.UserRepository;
 import com.example.Room_Management_System.Requests.UpdateExpenseDTO;
+import com.example.Room_Management_System.entity.UserInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -34,6 +36,9 @@ public class ExpenseService {
     private UserRepository userRepository;
 
     @Autowired
+    private UserInfoRepository userInfoRepository;
+
+    @Autowired
     private RoomRepository roomRepository;
 
     @Autowired
@@ -44,43 +49,77 @@ public class ExpenseService {
         String uuid = UUID.randomUUID().toString();
         expense.setId(uuid);
         Optional<User> userOpt = userRepository.findById(userId);
-        if (!userOpt.isPresent()) {
+        Optional<UserInfo> userInfo = userInfoRepository.findById(userId);
+
+        if (!userOpt.isPresent() && !userInfo.isPresent()) {
             throw new RuntimeException("User not found");
         }
+        else if(userOpt.isPresent()){
+            expense.setUserId(userId);
+            expense.setUserName(userOpt.get().getName());
+            expense.setDate(LocalDate.now());
 
-        expense.setUserId(userId);
-        expense.setUserName(userOpt.get().getName());
-        expense.setDate(LocalDate.now());
+            expense.setRoomId(userOpt.get().getRoomId());
+            String validationError = validateExpense(expense);
+            if (validationError != null) {
+                throw new RuntimeException("Mandatory fields are missing: " + validationError);
+            }
 
-        expense.setRoomId(userOpt.get().getRoomId());
-        String validationError = validateExpense(expense);
-        if (validationError != null) {
-            throw new RuntimeException("Mandatory fields are missing: " + validationError);
+            // 3. Generate ID if not provided
+            if (expense.getId() == null) {
+                expense.setId(UUID.randomUUID().toString());
+            }
+
+            // 4. Set timestamps
+            if (expense.getCreatedAt() == null) {
+                expense.setCreatedAt(LocalDateTime.now());
+            }
+            expense.setUpdatedAt(LocalDateTime.now());
+
+            Room room = roomRepository.findById(userOpt.get().getRoomId()).get();
+
+            paymentCalculation(room,expense);
+
+
+            // 5. Save the expense
+            Expense savedExpense = expenseRepository.save(expense);
+
+            // 6. Update user's expense list
+            updateUserExpenseList(savedExpense);
+
+            return savedExpense;
+
+        }else if (userInfo.isPresent()){
+
+            expense.setUserId(userId);
+            expense.setUserName(userInfo.get().getName());
+            expense.setDate(LocalDate.now());
+
+            String validationError = validateExpense(expense);
+            if (validationError != null) {
+                throw new RuntimeException("Mandatory fields are missing: " + validationError);
+            }
+
+            // 3. Generate ID if not provided
+            if (expense.getId() == null) {
+                expense.setId(UUID.randomUUID().toString());
+            }
+
+            // 4. Set timestamps
+            if (expense.getCreatedAt() == null) {
+                expense.setCreatedAt(LocalDateTime.now());
+            }
+            expense.setUpdatedAt(LocalDateTime.now());
+            // 5. Save the expense
+            Expense savedExpense = expenseRepository.save(expense);
+            // 6. Update user's expense list
+            updateUserExpenseList(savedExpense);
+
+            return savedExpense;
+
         }
 
-        // 3. Generate ID if not provided
-        if (expense.getId() == null) {
-            expense.setId(UUID.randomUUID().toString());
-        }
-
-        // 4. Set timestamps
-        if (expense.getCreatedAt() == null) {
-            expense.setCreatedAt(LocalDateTime.now());
-        }
-        expense.setUpdatedAt(LocalDateTime.now());
-
-        Room room = roomRepository.findById(userOpt.get().getRoomId()).get();
-
-        paymentCalculation(room,expense);
-
-
-        // 5. Save the expense
-        Expense savedExpense = expenseRepository.save(expense);
-
-        // 6. Update user's expense list
-        updateUserExpenseList(savedExpense);
-
-        return savedExpense;
+        return null;
     }
 
     private void paymentCalculation(Room room, Expense expense) {
@@ -109,9 +148,6 @@ public class ExpenseService {
         if (expense.getUserId() == null) {
             missingFields.append("userId, ");
         }
-        if (expense.getRoomId() == null) {
-            missingFields.append("roomId, ");
-        }
         if (expense.getPaid() == null) {
             missingFields.append("isPaid, ");
         }
@@ -127,6 +163,7 @@ public class ExpenseService {
     private void updateUserExpenseList(Expense expense) {
         // Add expense ID to user's expense list
         Optional<User> userOpt = userRepository.findById(expense.getUserId());
+        Optional<UserInfo> userInfo = userInfoRepository.findById(expense.getUserId());
         if (userOpt.isPresent()) {
             User user = userOpt.get();
             List<String> expenseIds = user.getExpenseIds();
@@ -141,6 +178,20 @@ public class ExpenseService {
             }
             user.setExpenseIds(expenseIds);
             userRepository.save(user);
+        }else if(userInfo.isPresent()){
+            UserInfo userInfo1 = userInfo.get();
+            List<String> expenseIds = userInfo1.getExpenseIds();
+            if (expenseIds == null) {
+                expenseIds = new ArrayList<>();
+            }
+            expenseIds.add(expense.getId());
+            if(userInfo1.getTotalExpences()==null){
+                userInfo1.setTotalExpences(expense.getAmount());
+            }else{
+                userInfo1.setTotalExpences(userInfo1.getTotalExpences()+expense.getAmount());
+            }
+            userInfo1.setExpenseIds(expenseIds);
+            userInfoRepository.save(userInfo1);
         }
     }
 
