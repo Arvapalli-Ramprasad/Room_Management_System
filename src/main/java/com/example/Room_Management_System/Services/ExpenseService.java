@@ -297,16 +297,22 @@ public class ExpenseService {
             throw new IllegalArgumentException("User ID cannot be null or empty");
         }
         Optional<User> userOpt = userRepository.findById(userId);
-        if (!userOpt.isPresent()) {
-            throw new RuntimeException("User not found with ID: "+userId);
-        }
+        Optional<UserInfo> userInfo = userInfoRepository.findById(userId);
+//        if (!userOpt.isPresent()) {
+//            throw new RuntimeException("User not found with ID: "+userId);
+//        }
         User user = userOpt.get();
-        if(user.getExpenseIds()==null || user.getExpenseIds().size()==0){
+        UserInfo userInfo1 = userInfo.get();
+        if((user.getExpenseIds()==null || user.getExpenseIds().size()==0) && (userInfo1.getExpenseIds()==null || userInfo1.getExpenseIds().size()==0)){
             throw new RuntimeException("Empty Expences on the userId: "+ userId);
+        }else if(user.getExpenseIds().size()>0){
+            List<Expense> expenses = expenseRepository.findAllById(user.getExpenseIds());
+            return expenses;
         }
-
-        List<Expense> expenses = expenseRepository.findAllById(user.getExpenseIds());
-        return expenses;
+        else{
+            List<Expense> expenses = expenseRepository.findAllById(userInfo1.getExpenseIds());
+            return expenses;
+        }
     }
 
     public Page<Expense> getAllExpences(Integer limit, Integer offset){
