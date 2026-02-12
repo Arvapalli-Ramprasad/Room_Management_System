@@ -293,27 +293,38 @@ public class ExpenseService {
 
 
     public List<Expense> getUserExpenses(String userId) {
-        if(userId==null || userId.trim().isEmpty()){
+
+        if (userId == null || userId.trim().isEmpty()) {
             throw new IllegalArgumentException("User ID cannot be null or empty");
         }
+
         Optional<User> userOpt = userRepository.findById(userId);
-        Optional<UserInfo> userInfo = userInfoRepository.findById(userId);
-//        if (!userOpt.isPresent()) {
-//            throw new RuntimeException("User not found with ID: "+userId);
-//        }
-        User user = userOpt.get();
-        UserInfo userInfo1 = userInfo.get();
-        if((user.getExpenseIds()==null || user.getExpenseIds().size()==0) && (userInfo1.getExpenseIds()==null || userInfo1.getExpenseIds().size()==0)){
-            throw new RuntimeException("Empty Expences on the userId: "+ userId);
-        }else if(user.getExpenseIds().size()>0){
-            List<Expense> expenses = expenseRepository.findAllById(user.getExpenseIds());
-            return expenses;
+        Optional<UserInfo> userInfoOpt = userInfoRepository.findById(userId);
+
+        User user = userOpt.orElse(null);
+        UserInfo userInfo = userInfoOpt.orElse(null);
+
+        if (user == null && userInfo == null) {
+            throw new RuntimeException("User not found with ID: " + userId);
         }
-        else{
-            List<Expense> expenses = expenseRepository.findAllById(userInfo1.getExpenseIds());
-            return expenses;
+
+        List<String> expenseIds = new ArrayList<>();
+
+        if (user != null && user.getExpenseIds() != null) {
+            expenseIds.addAll(user.getExpenseIds());
         }
+
+        if (userInfo != null && userInfo.getExpenseIds() != null) {
+            expenseIds.addAll(userInfo.getExpenseIds());
+        }
+
+        if (expenseIds.isEmpty()) {
+            throw new RuntimeException("No expenses found for userId: " + userId);
+        }
+
+        return expenseRepository.findAllById(expenseIds);
     }
+
 
     public Page<Expense> getAllExpences(Integer limit, Integer offset){
 
