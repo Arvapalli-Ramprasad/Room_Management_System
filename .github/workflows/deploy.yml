@@ -81,7 +81,9 @@ jobs:
             
             # Validate critical environment variables
             echo "=== Environment Variables Check ==="
-            echo "MONGO_URI: ${MONGO_URI:0:50}..."
+            echo "MONGO_URI length: ${#MONGO_URI}"
+            echo "MONGO_URI first 50 chars: ${MONGO_URI:0:50}..."
+            echo "MONGO_URI last 10 chars: ...${MONGO_URI: -10}"
             echo "MAIL_USERNAME: ${MAIL_USERNAME}"
             echo "AWS_REGION: ${AWS_REGION}"
             echo "AWS_S3_BUCKET: ${AWS_S3_BUCKET}"
