@@ -61,16 +61,6 @@ jobs:
 
             echo "=== Setting Environment Variables ==="
             
-            # Kill any existing processes on port 8080
-            echo "=== Cleaning up existing processes ==="
-            echo "Checking for existing processes..."
-            ps aux | grep 'Room_Management_System' | grep -v grep || echo "No Room_Management_System processes found"
-            
-            # Kill processes safely without requiring root
-            pkill -f 'Room_Management_System' 2>/dev/null || echo "No Room_Management_System processes to kill"
-            sleep 3
-            echo "Cleanup completed"
-            
             export MONGO_URI="${{ secrets.MONGO_URI }}"
             export MAIL_USERNAME="${{ secrets.MAIL_USERNAME }}"
             export MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD }}"
