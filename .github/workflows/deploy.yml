@@ -63,13 +63,24 @@ jobs:
             
             # Kill existing application process
             echo "=== Cleaning up previous deployment ==="
-            if [ -f "app.pid" ]; then
-              OLD_PID=$(cat app.pid)
+            
+            # Check multiple possible PID file locations
+            PID_FILE="/home/ec2-user/app.pid"
+            if [ -f "$PID_FILE" ]; then
+              OLD_PID=$(cat "$PID_FILE")
               if kill -0 $OLD_PID 2>/dev/null; then
                 echo "Killing previous process PID: $OLD_PID"
                 kill $OLD_PID
                 sleep 3
+              else
+                echo "Old PID $OLD_PID not running, removing stale PID file"
+                rm -f "$PID_FILE"
               fi
+            else
+              echo "No PID file found, checking for running processes..."
+              # Force kill any existing Java processes running our JAR
+              pkill -f 'Room_Management_System' 2>/dev/null || echo "No Room_Management_System processes found"
+              sleep 2
             fi
             
             export MONGO_URI="${{ secrets.MONGO_URI }}"
@@ -80,14 +91,13 @@ jobs:
             export AWS_REGION="${{ secrets.AWS_REGION }}"
             export AWS_S3_BUCKET="${{ secrets.AWS_S3_BUCKET }}"
             export FRONTEND_URL="${{ secrets.FRONTEND_URL }}"
-            echo "FRONTEND_URL set to: $FRONTEND_URL"
             
             echo "=== Starting Application ==="
             # Clear previous logs
             > output.log
 
-            # Start Spring Boot application
-            nohup java -jar "$JAR_PATH" > output.log 2>&1 &
+            # Start Spring Boot application with environment variables
+            env FRONTEND_URL="$FRONTEND_URL" MONGO_URI="$MONGO_URI" MAIL_USERNAME="$MAIL_USERNAME" MAIL_PASSWORD="$MAIL_PASSWORD" AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" AWS_REGION="$AWS_REGION" AWS_S3_BUCKET="$AWS_S3_BUCKET" nohup java -jar "$JAR_PATH" > output.log 2>&1 &
             JAVA_PID=$!
             echo $JAVA_PID > app.pid
             echo "Application started with PID: $JAVA_PID"
