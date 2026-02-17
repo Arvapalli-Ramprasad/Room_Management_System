@@ -42,6 +42,22 @@ jobs:
           timeout: 120s
           command_timeout: 10m
           script: |
+            echo "=== Verifying File Transfer ==="
+            ls -la /home/ec2-user/
+            
+            # Check if JAR exists in current directory
+            if [ -f "Room_Management_System-0.0.1-SNAPSHOT.jar" ]; then
+              echo "✅ JAR file found in current directory"
+              JAR_PATH="Room_Management_System-0.0.1-SNAPSHOT.jar"
+            elif [ -f "/home/ec2-user/Room_Management_System-0.0.1-SNAPSHOT.jar" ]; then
+              echo "✅ JAR file found in /home/ec2-user/"
+              JAR_PATH="/home/ec2-user/Room_Management_System-0.0.1-SNAPSHOT.jar"
+            else
+              echo "❌ JAR file not found! Searching..."
+              find /home/ec2-user/ -name "*.jar" -type f
+              exit 1
+            fi
+            
             # Create a deployment script with MongoDB verification
             cat > deploy.sh << 'EOF'
             #!/bin/bash
@@ -79,14 +95,18 @@ jobs:
               echo "MongoDB client not available, skipping connection test"
             fi
             
+            # Use the correct JAR path
+            JAR_PATH="${JAR_PATH:-Room_Management_System-0.0.1-SNAPSHOT.jar}"
+            echo "Using JAR path: $JAR_PATH"
+            
             # Check if JAR file exists
-            if [ ! -f "Room_Management_System-0.0.1-SNAPSHOT.jar" ]; then
-              echo "❌ JAR file not found!"
+            if [ ! -f "$JAR_PATH" ]; then
+              echo "❌ JAR file not found at: $JAR_PATH"
               exit 1
             fi
             
             echo "=== Starting Application ==="
-            nohup java -jar Room_Management_System-0.0.1-SNAPSHOT.jar > output.log 2>&1 &
+            nohup java -jar "$JAR_PATH" > output.log 2>&1 &
             JAVA_PID=$!
             echo $JAVA_PID > app.pid
             
