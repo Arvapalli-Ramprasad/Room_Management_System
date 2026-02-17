@@ -40,7 +40,11 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            # Kill existing process
             pkill -f 'Room_Management_System' || true
+            sleep 2
+            
+            # Set environment variables
             echo "Setting environment variables..."
             export MONGO_URI="${{ secrets.MONGO_URI }}"
             export MAIL_USERNAME="${{ secrets.MAIL_USERNAME }}"
@@ -49,5 +53,21 @@ jobs:
             export AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}"
             export AWS_REGION="${{ secrets.AWS_REGION }}"
             export AWS_S3_BUCKET="${{ secrets.AWS_S3_BUCKET }}"
+            
+            # Start application with proper daemonization
             echo "Starting application..."
             nohup java -jar Room_Management_System-0.0.1-SNAPSHOT.jar > output.log 2>&1 &
+            
+            # Wait a moment and check if process started
+            sleep 5
+            if pgrep -f 'Room_Management_System' > /dev/null; then
+              echo "✅ Application started successfully"
+              echo "Process ID: $(pgrep -f 'Room_Management_System')"
+              echo "Recent logs:"
+              tail -10 output.log
+            else
+              echo "❌ Application failed to start"
+              echo "Error logs:"
+              cat output.log
+              exit 1
+            fi
