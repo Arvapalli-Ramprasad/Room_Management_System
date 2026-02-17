@@ -48,135 +48,59 @@ jobs:
             echo "=== Verifying File Transfer ==="
             ls -la /home/ec2-user/
             
-            # Check if JAR exists in target directory
+            # Determine JAR path
             if [ -f "/home/ec2-user/target/Room_Management_System-0.0.1-SNAPSHOT.jar" ]; then
-              echo "✅ JAR file found in /home/ec2-user/target/"
               JAR_PATH="/home/ec2-user/target/Room_Management_System-0.0.1-SNAPSHOT.jar"
             elif [ -f "/home/ec2-user/Room_Management_System/target/Room_Management_System-0.0.1-SNAPSHOT.jar" ]; then
-              echo "✅ JAR file found in /home/ec2-user/Room_Management_System/target/"
               JAR_PATH="/home/ec2-user/Room_Management_System/target/Room_Management_System-0.0.1-SNAPSHOT.jar"
             else
-              echo "❌ JAR file not found! Searching..."
-              find /home/ec2-user/ -name "*Room_Management_System-0.0.1-SNAPSHOT.jar" -type f
+              echo "❌ JAR file not found!"
               exit 1
             fi
-            
-            echo "=== Deploying Application ==="
-            echo "Setting up environment variables..."
-            
-            # Set environment variables with error checking
-            echo "Setting MONGO_URI..."
-            export MONGO_URI="${{ secrets.MONGO_URI }}" || echo "Failed to set MONGO_URI"
-            echo "MONGO_URI set successfully"
-            
-            echo "Setting MAIL_USERNAME..."
-            export MAIL_USERNAME="${{ secrets.MAIL_USERNAME }}" || echo "Failed to set MAIL_USERNAME"
-            echo "MAIL_USERNAME set successfully"
-            
-            echo "Setting remaining environment variables..."
+            echo "✅ JAR found at $JAR_PATH"
+
+            echo "=== Setting Environment Variables ==="
+            export MONGO_URI="${{ secrets.MONGO_URI }}"
+            export MAIL_USERNAME="${{ secrets.MAIL_USERNAME }}"
             export MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD }}"
             export AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}"
             export AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}"
             export AWS_REGION="${{ secrets.AWS_REGION }}"
             export AWS_S3_BUCKET="${{ secrets.AWS_S3_BUCKET }}"
-            echo "All environment variables set"
             
-            # Validate critical environment variables
-            echo "=== Environment Variables Check ==="
-            echo "MONGO_URI length: ${#MONGO_URI}"
-            echo "MONGO_URI first 50 chars: ${MONGO_URI:0:50}..."
-            echo "MONGO_URI last 10 chars: ...${MONGO_URI: -10}"
-            echo "MAIL_USERNAME: ${MAIL_USERNAME}"
-            echo "AWS_REGION: ${AWS_REGION}"
-            echo "AWS_S3_BUCKET: ${AWS_S3_BUCKET}"
+            # Set frontend.base-url
+            export FRONTEND_URL="${{ secrets.FRONTEND_BASE_URL }}"
+            echo "FRONTEND_URL set to FRONTEND_URL"
             
-            # Validate MongoDB URI format
-            if [[ ! "${MONGO_URI}" =~ ^mongodb://|^mongodb\+srv:// ]]; then
-              echo "❌ INVALID MONGODB URI FORMAT!"
-              echo "Current MONGO_URI starts with: ${MONGO_URI:0:20}..."
-              echo "MONGO_URI must start with 'mongodb://' or 'mongodb+srv://'"
-              echo "Please check your MONGO_URI secret in GitHub repository settings"
-              exit 1
-            else
-              echo "✅ MongoDB URI format is valid"
-            fi
-            
-            # Test MongoDB connection if tools are available
-            if command -v mongosh >/dev/null 2>&1; then
-              echo "=== Testing MongoDB Connection ==="
-              timeout 15 mongosh "${MONGO_URI}" --eval "db.adminCommand('ping')" || echo "MongoDB connection test failed"
-            elif command -v mongo >/dev/null 2>&1; then
-              echo "=== Testing MongoDB Connection ==="
-              timeout 15 mongo "${MONGO_URI}" --eval "db.adminCommand('ping')" || echo "MongoDB connection test failed"
-            else
-              echo "MongoDB client not available, installing network tools for testing..."
-              # Try to test basic network connectivity
-              if command -v nc >/dev/null 2>&1; then
-                # Extract host from MONGO_URI for basic connectivity test
-                MONGO_HOST=$(echo "${MONGO_URI}" | sed -n 's/.*@\([^:]*\):.*/\1/p')
-                MONGO_PORT=$(echo "${MONGO_URI}" | sed -n 's/.*:\([0-9]*\)\/.*/\1/p')
-                if [ -n "$MONGO_HOST" ] && [ -n "$MONGO_PORT" ]; then
-                  echo "Testing network connectivity to ${MONGO_HOST}:${MONGO_PORT}"
-                  timeout 10 nc -zv "${MONGO_HOST}" "${MONGO_PORT}" || echo "Network connectivity test failed"
-                fi
-              fi
-            fi
-            
-            echo "Using JAR path: ${JAR_PATH}"
-            
+            echo "=== Starting Application ==="
             # Clear previous logs
             > output.log
-            
-            # Start application with proper logging
-            echo "=== Starting Application ==="
-            nohup java -jar "${JAR_PATH}" > output.log 2>&1 &
+
+            # Start Spring Boot with extra system property for frontend.base-url
+            nohup java -Dfrontend.base-url="$FRONTEND_BASE_URL" -jar "$JAR_PATH" > output.log 2>&1 &
             JAVA_PID=$!
             echo $JAVA_PID > app.pid
-            
             echo "Application started with PID: $JAVA_PID"
-            echo "Waiting for application to fully start..."
-            
-            # Wait for application to start and verify it's running
+
+            # Wait for app to start
             for i in {1..90}; do
               if kill -0 $JAVA_PID 2>/dev/null; then
-                echo "Process is running (attempt $i/90)"
-            
-                # Check if Spring Boot has started successfully
-                if [ -f output.log ]; then
-                  if grep -q "Started RoomManagementSystemApplication" output.log; then
-                    echo "✅ Application started successfully!"
-                    echo "=== Final Status ==="
-                    echo "PID: $JAVA_PID"
-                    echo "Recent logs:"
-                    tail -20 output.log
-                    exit 0
-                  elif grep -q "ERROR\|Exception\|Failed\|Application run failed" output.log && ! grep -q "Unable to proxy interface-implementing method" output.log; then
-                    echo "❌ Application startup errors detected"
-                    echo "=== Error Logs ==="
-                    tail -50 output.log
-                    echo "=== Full Error Context ==="
-                    grep -A 10 -B 5 "ERROR\|Exception\|Failed\|Application run failed" output.log || echo "No error patterns found"
-                    exit 1
-                  fi
-            
-                  # Show progress every 10 attempts
-                  if [ $((i % 10)) -eq 0 ]; then
-                    echo "=== Current Logs (attempt $i) ==="
-                    tail -10 output.log
-                  fi
+                if grep -q "Started RoomManagementSystemApplication" output.log; then
+                  echo "✅ Application started successfully!"
+                  tail -20 output.log
+                  exit 0
+                elif grep -q "ERROR\|Exception\|Failed\|Application run failed" output.log; then
+                  echo "❌ Application startup errors detected"
+                  tail -50 output.log
+                  exit 1
                 fi
               else
                 echo "❌ Process died unexpectedly"
-                if [ -f output.log ]; then
-                  echo "=== Error Logs ==="
-                  cat output.log
-                fi
+                cat output.log
                 exit 1
               fi
               sleep 2
             done
-            
-            echo "⚠️ Application startup timeout - but process may still be running"
-            echo "PID: $JAVA_PID"
-            echo "Full logs:"
-            cat output.log
+
+            echo "⚠️ Application startup timeout - process may still be running"
+            tail -50 output.log
