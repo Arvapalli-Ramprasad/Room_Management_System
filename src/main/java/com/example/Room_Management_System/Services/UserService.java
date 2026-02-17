@@ -92,7 +92,8 @@ public class UserService {
         message.setReplyTo("springbootofficial@gmail.com");
         message.setSubject("Complete Your Room Allocation - Set Password");
 
-        String frontendUrl = "http://localhost:4200/#/setup-password?token=" + token + "&email=" + user.getEmail();
+        String frontendUrl = frontendBaseUrl
+                + "/#/setup-password?token=" + token + "&email=" + user.getEmail();
         message.setText(
                 "Hi " + user.getName() + ",\n\n" +
                         "You've been invited to join Room " + room.getRoomNumber() + ".\n" +

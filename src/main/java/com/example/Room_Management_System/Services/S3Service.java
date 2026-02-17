@@ -37,11 +37,15 @@ public class S3Service {
 
         s3Client.putObject(
                 request,
-                RequestBody.fromBytes(file.getBytes())
+                RequestBody.fromInputStream(
+                        file.getInputStream(),
+                        file.getSize()
+                )
         );
 
         return key; // store this in DB
     }
+
 
 //    public String generateSignedUrl(String key) {
 //
