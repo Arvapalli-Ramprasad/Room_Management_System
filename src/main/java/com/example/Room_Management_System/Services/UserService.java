@@ -37,7 +37,7 @@ public class UserService {
     @Autowired
     private JavaMailSender javaMailSender;
 
-    @Value("${frontend.base-url}")
+    @Value("${app.frontend.url}")
     private String frontendBaseUrl;
 
 
