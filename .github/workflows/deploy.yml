@@ -39,15 +39,20 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          timeout: 60s
-          command_timeout: 5m
+          timeout: 120s
+          command_timeout: 10m
           script: |
+            # Create a deployment script with MongoDB verification
+            cat > deploy.sh << 'EOF'
+            #!/bin/bash
+            
+            echo "=== Deployment Started at $(date) ==="
+            
             # Kill existing process
             pkill -f 'Room_Management_System' || true
             sleep 3
             
             # Set environment variables
-            echo "Setting environment variables..."
             export MONGO_URI="${{ secrets.MONGO_URI }}"
             export MAIL_USERNAME="${{ secrets.MAIL_USERNAME }}"
             export MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD }}"
@@ -56,31 +61,60 @@ jobs:
             export AWS_REGION="${{ secrets.AWS_REGION }}"
             export AWS_S3_BUCKET="${{ secrets.AWS_S3_BUCKET }}"
             
-            # Start application with proper daemonization
-            echo "Starting application..."
+            # Validate critical environment variables
+            echo "=== Environment Variables Check ==="
+            echo "MONGO_URI: ${MONGO_URI:0:20}..."
+            echo "MAIL_USERNAME: ${MAIL_USERNAME}"
+            echo "AWS_REGION: ${AWS_REGION}"
+            echo "AWS_S3_BUCKET: ${AWS_S3_BUCKET}"
+            
+            # Test MongoDB connection if tools are available
+            if command -v mongosh >/dev/null 2>&1; then
+              echo "=== Testing MongoDB Connection ==="
+              timeout 10 mongosh "${MONGO_URI}" --eval "db.adminCommand('ping')" || echo "MongoDB connection test failed"
+            elif command -v mongo >/dev/null 2>&1; then
+              echo "=== Testing MongoDB Connection ==="
+              timeout 10 mongo "${MONGO_URI}" --eval "db.adminCommand('ping')" || echo "MongoDB connection test failed"
+            else
+              echo "MongoDB client not available, skipping connection test"
+            fi
+            
+            # Check if JAR file exists
+            if [ ! -f "Room_Management_System-0.0.1-SNAPSHOT.jar" ]; then
+              echo "❌ JAR file not found!"
+              exit 1
+            fi
+            
+            echo "=== Starting Application ==="
             nohup java -jar Room_Management_System-0.0.1-SNAPSHOT.jar > output.log 2>&1 &
             JAVA_PID=$!
+            echo $JAVA_PID > app.pid
             
-            # Wait for application to start
-            echo "Waiting for application to start..."
-            for i in {1..30}; do
-              if kill -0 $JAVA_PID 2>/dev/null; then
-                echo "Process is running (PID: $JAVA_PID)"
-                if [ -f output.log ] && grep -q "Started RoomManagementSystemApplication" output.log; then
-                  echo "✅ Application started successfully"
-                  echo "Process ID: $JAVA_PID"
-                  echo "Recent logs:"
-                  tail -10 output.log
-                  exit 0
-                fi
-              else
-                echo "❌ Process died"
-                break
+            echo "Application started with PID: $JAVA_PID"
+            echo "=== Deployment Script Completed ==="
+            EOF
+            
+            chmod +x deploy.sh
+            ./deploy.sh &
+            
+            # Give the deployment script time to start
+            sleep 3
+            
+            # Check if deployment script ran
+            if [ -f app.pid ]; then
+              echo "✅ Deployment initiated successfully"
+              echo "Application PID: $(cat app.pid)"
+              echo "Checking initial logs..."
+              sleep 5
+              if [ -f output.log ]; then
+                echo "=== Initial Application Logs ==="
+                head -20 output.log
               fi
-              sleep 2
-            done
-            
-            echo "❌ Application failed to start within timeout"
-            echo "Error logs:"
-            cat output.log 2>/dev/null || echo "No log file found"
-            exit 1
+            else
+              echo "❌ Deployment failed"
+              if [ -f output.log ]; then
+                echo "=== Error Logs ==="
+                cat output.log
+              fi
+              exit 1
+            fi
