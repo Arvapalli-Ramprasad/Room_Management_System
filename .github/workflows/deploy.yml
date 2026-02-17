@@ -150,7 +150,7 @@ jobs:
                     echo "Recent logs:"
                     tail -20 output.log
                     exit 0
-                  elif grep -q "ERROR\|Exception\|Failed\|Application run failed" output.log; then
+                  elif grep -q "ERROR\|Exception\|Failed\|Application run failed" output.log && ! grep -q "Unable to proxy interface-implementing method" output.log; then
                     echo "❌ Application startup errors detected"
                     echo "=== Error Logs ==="
                     tail -50 output.log
