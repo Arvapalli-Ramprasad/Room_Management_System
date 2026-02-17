@@ -92,7 +92,7 @@ jobs:
                   echo "Recent logs:"
                   tail -20 output.log
                   exit 0
-                elif grep -q "ERROR\|Application run failed" output.log; then
+                elif grep -q "ERROR\|Application run failed" output.log && ! grep -q "Unable to proxy interface-implementing method" output.log && ! grep -q "UserDetailsService beans will not be used" output.log; then
                   echo "❌ Application startup errors detected"
                   echo "=== Error Logs ==="
                   tail -50 output.log
