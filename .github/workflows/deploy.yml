@@ -42,11 +42,8 @@ jobs:
           timeout: 300s
           command_timeout: 20m
           script: |
-            echo "=== Checking Previous Deployment Logs ==="
-            if [ -f output.log ]; then
-              echo "=== Previous Application Logs ==="
-              cat output.log
-            fi
+            echo "=== Starting New Deployment ==="
+            echo "Timestamp: $(date)"
             
             echo "=== Verifying File Transfer ==="
             ls -la /home/ec2-user/
