@@ -83,7 +83,8 @@ jobs:
             
               # Force kill any process using port 8080
               echo "Force killing any processes on port 8080..."
-              lsof -ti:8080 | xargs kill -9 2>/dev/null || echo "No processes found on port 8080"
+              # Use netstat and fuser as alternatives to lsof (no root required)
+              netstat -tlnp | grep :8080 | awk '{print $7}' | xargs kill -9 2>/dev/null || echo "No processes found on port 8080"
               sleep 2
             fi
             
