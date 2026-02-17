@@ -39,9 +39,15 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          timeout: 180s
-          command_timeout: 15m
+          timeout: 300s
+          command_timeout: 20m
           script: |
+            echo "=== Checking Previous Deployment Logs ==="
+            if [ -f output.log ]; then
+              echo "=== Previous Application Logs ==="
+              cat output.log
+            fi
+            
             echo "=== Verifying File Transfer ==="
             ls -la /home/ec2-user/
             
@@ -83,15 +89,28 @@ jobs:
             # Test MongoDB connection if tools are available
             if command -v mongosh >/dev/null 2>&1; then
               echo "=== Testing MongoDB Connection ==="
-              timeout 10 mongosh "${MONGO_URI}" --eval "db.adminCommand('ping')" || echo "MongoDB connection test failed"
+              timeout 15 mongosh "${MONGO_URI}" --eval "db.adminCommand('ping')" || echo "MongoDB connection test failed"
             elif command -v mongo >/dev/null 2>&1; then
               echo "=== Testing MongoDB Connection ==="
-              timeout 10 mongo "${MONGO_URI}" --eval "db.adminCommand('ping')" || echo "MongoDB connection test failed"
+              timeout 15 mongo "${MONGO_URI}" --eval "db.adminCommand('ping')" || echo "MongoDB connection test failed"
             else
-              echo "MongoDB client not available, skipping connection test"
+              echo "MongoDB client not available, installing network tools for testing..."
+              # Try to test basic network connectivity
+              if command -v nc >/dev/null 2>&1; then
+                # Extract host from MONGO_URI for basic connectivity test
+                MONGO_HOST=$(echo "${MONGO_URI}" | sed -n 's/.*@\([^:]*\):.*/\1/p')
+                MONGO_PORT=$(echo "${MONGO_URI}" | sed -n 's/.*:\([0-9]*\)\/.*/\1/p')
+                if [ -n "$MONGO_HOST" ] && [ -n "$MONGO_PORT" ]; then
+                  echo "Testing network connectivity to ${MONGO_HOST}:${MONGO_PORT}"
+                  timeout 10 nc -zv "${MONGO_HOST}" "${MONGO_PORT}" || echo "Network connectivity test failed"
+                fi
+              fi
             fi
             
             echo "Using JAR path: ${JAR_PATH}"
+            
+            # Clear previous logs
+            > output.log
             
             # Start application with proper logging
             echo "=== Starting Application ==="
@@ -103,9 +122,9 @@ jobs:
             echo "Waiting for application to fully start..."
             
             # Wait for application to start and verify it's running
-            for i in {1..60}; do
+            for i in {1..90}; do
               if kill -0 $JAVA_PID 2>/dev/null; then
-                echo "Process is running (attempt $i/60)"
+                echo "Process is running (attempt $i/90)"
             
                 # Check if Spring Boot has started successfully
                 if [ -f output.log ]; then
@@ -114,13 +133,19 @@ jobs:
                     echo "=== Final Status ==="
                     echo "PID: $JAVA_PID"
                     echo "Recent logs:"
-                    tail -10 output.log
+                    tail -20 output.log
                     exit 0
                   elif grep -q "Error\|Exception\|Failed" output.log; then
                     echo "❌ Application startup errors detected"
                     echo "=== Error Logs ==="
-                    tail -20 output.log
+                    tail -30 output.log
                     exit 1
+                  fi
+            
+                  # Show progress every 10 attempts
+                  if [ $((i % 10)) -eq 0 ]; then
+                    echo "=== Current Logs (attempt $i) ==="
+                    tail -10 output.log
                   fi
                 fi
               else
@@ -136,5 +161,5 @@ jobs:
             
             echo "⚠️ Application startup timeout - but process may still be running"
             echo "PID: $JAVA_PID"
-            echo "Current logs:"
-            tail -10 output.log
+            echo "Full logs:"
+            cat output.log
