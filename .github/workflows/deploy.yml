@@ -39,10 +39,12 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
+          timeout: 60s
+          command_timeout: 5m
           script: |
             # Kill existing process
             pkill -f 'Room_Management_System' || true
-            sleep 2
+            sleep 3
             
             # Set environment variables
             echo "Setting environment variables..."
@@ -57,17 +59,28 @@ jobs:
             # Start application with proper daemonization
             echo "Starting application..."
             nohup java -jar Room_Management_System-0.0.1-SNAPSHOT.jar > output.log 2>&1 &
+            JAVA_PID=$!
             
-            # Wait a moment and check if process started
-            sleep 5
-            if pgrep -f 'Room_Management_System' > /dev/null; then
-              echo "✅ Application started successfully"
-              echo "Process ID: $(pgrep -f 'Room_Management_System')"
-              echo "Recent logs:"
-              tail -10 output.log
-            else
-              echo "❌ Application failed to start"
-              echo "Error logs:"
-              cat output.log
-              exit 1
-            fi
+            # Wait for application to start
+            echo "Waiting for application to start..."
+            for i in {1..30}; do
+              if kill -0 $JAVA_PID 2>/dev/null; then
+                echo "Process is running (PID: $JAVA_PID)"
+                if [ -f output.log ] && grep -q "Started RoomManagementSystemApplication" output.log; then
+                  echo "✅ Application started successfully"
+                  echo "Process ID: $JAVA_PID"
+                  echo "Recent logs:"
+                  tail -10 output.log
+                  exit 0
+                fi
+              else
+                echo "❌ Process died"
+                break
+              fi
+              sleep 2
+            done
+            
+            echo "❌ Application failed to start within timeout"
+            echo "Error logs:"
+            cat output.log 2>/dev/null || echo "No log file found"
+            exit 1
