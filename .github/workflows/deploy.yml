@@ -150,12 +150,12 @@ jobs:
                     echo "Recent logs:"
                     tail -20 output.log
                     exit 0
-                  elif grep -q "Error\|Exception\|Failed" output.log; then
+                  elif grep -q "ERROR\|Exception\|Failed\|Application run failed" output.log; then
                     echo "❌ Application startup errors detected"
                     echo "=== Error Logs ==="
                     tail -50 output.log
                     echo "=== Full Error Context ==="
-                    grep -A 10 -B 5 "Error\|Exception\|Failed" output.log || echo "No error patterns found"
+                    grep -A 10 -B 5 "ERROR\|Exception\|Failed\|Application run failed" output.log || echo "No error patterns found"
                     exit 1
                   fi
             
