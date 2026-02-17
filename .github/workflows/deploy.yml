@@ -61,6 +61,17 @@ jobs:
 
             echo "=== Setting Environment Variables ==="
             
+            # Kill existing application process
+            echo "=== Cleaning up previous deployment ==="
+            if [ -f "app.pid" ]; then
+              OLD_PID=$(cat app.pid)
+              if kill -0 $OLD_PID 2>/dev/null; then
+                echo "Killing previous process PID: $OLD_PID"
+                kill $OLD_PID
+                sleep 3
+              fi
+            fi
+            
             export MONGO_URI="${{ secrets.MONGO_URI }}"
             export MAIL_USERNAME="${{ secrets.MAIL_USERNAME }}"
             export MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD }}"
@@ -68,8 +79,6 @@ jobs:
             export AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}"
             export AWS_REGION="${{ secrets.AWS_REGION }}"
             export AWS_S3_BUCKET="${{ secrets.AWS_S3_BUCKET }}"
-            
-            # Set frontend URL
             export FRONTEND_URL="${{ secrets.FRONTEND_URL }}"
             echo "FRONTEND_URL set to: $FRONTEND_URL"
             
@@ -77,8 +86,8 @@ jobs:
             # Clear previous logs
             > output.log
 
-            # Start Spring Boot with extra system property for app.frontend.url
-            nohup java -Dapp.frontend.url="$FRONTEND_URL" -jar "$JAR_PATH" > output.log 2>&1 &
+            # Start Spring Boot application
+            nohup java -jar "$JAR_PATH" > output.log 2>&1 &
             JAVA_PID=$!
             echo $JAVA_PID > app.pid
             echo "Application started with PID: $JAVA_PID"
