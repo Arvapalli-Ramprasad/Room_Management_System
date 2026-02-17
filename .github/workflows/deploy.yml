@@ -69,12 +69,16 @@ jobs:
             export AWS_REGION="${{ secrets.AWS_REGION }}"
             export AWS_S3_BUCKET="${{ secrets.AWS_S3_BUCKET }}"
             
+            # Set frontend URL
+            export FRONTEND_URL="${{ secrets.FRONTEND_URL }}"
+            echo "FRONTEND_URL set to: $FRONTEND_URL"
+            
             echo "=== Starting Application ==="
             # Clear previous logs
             > output.log
 
-            # Start Spring Boot application
-            nohup java -jar "$JAR_PATH" > output.log 2>&1 &
+            # Start Spring Boot with extra system property for app.frontend.url
+            nohup java -Dapp.frontend.url="$FRONTEND_URL" -jar "$JAR_PATH" > output.log 2>&1 &
             JAVA_PID=$!
             echo $JAVA_PID > app.pid
             echo "Application started with PID: $JAVA_PID"
