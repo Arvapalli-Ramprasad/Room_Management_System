@@ -153,7 +153,9 @@ jobs:
                   elif grep -q "Error\|Exception\|Failed" output.log; then
                     echo "❌ Application startup errors detected"
                     echo "=== Error Logs ==="
-                    tail -30 output.log
+                    tail -50 output.log
+                    echo "=== Full Error Context ==="
+                    grep -A 10 -B 5 "Error\|Exception\|Failed" output.log || echo "No error patterns found"
                     exit 1
                   fi
             
