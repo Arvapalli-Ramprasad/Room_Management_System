@@ -8,6 +8,7 @@ import com.example.Room_Management_System.Repository.InvitationTokenRepository;
 import com.example.Room_Management_System.Repository.RoomRepository;
 import com.example.Room_Management_System.Repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -35,6 +36,10 @@ public class UserService {
 
     @Autowired
     private JavaMailSender javaMailSender;
+
+    @Value("${frontend.base-url}")
+    private String frontendBaseUrl;
+
 
     @Autowired
     private InvitationTokenRepository invitationTokenRepository;
