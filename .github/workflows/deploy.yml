@@ -65,12 +65,11 @@ jobs:
             echo "=== Cleaning up existing processes ==="
             echo "Checking for existing processes..."
             ps aux | grep 'Room_Management_System' | grep -v grep || echo "No Room_Management_System processes found"
-            netstat -tlnp | grep :8080 || echo "Port 8080 is free"
             
-            # Kill processes safely
+            # Kill processes safely without requiring root
             pkill -f 'Room_Management_System' 2>/dev/null || echo "No Room_Management_System processes to kill"
-            fuser -k 8080/tcp 2>/dev/null || echo "Port 8080 cleanup completed"
             sleep 3
+            echo "Cleanup completed"
             
             export MONGO_URI="${{ secrets.MONGO_URI }}"
             export MAIL_USERNAME="${{ secrets.MAIL_USERNAME }}"
