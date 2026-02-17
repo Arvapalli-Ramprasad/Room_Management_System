@@ -39,8 +39,8 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          timeout: 120s
-          command_timeout: 10m
+          timeout: 180s
+          command_timeout: 15m
           script: |
             echo "=== Verifying File Transfer ==="
             ls -la /home/ec2-user/
@@ -58,11 +58,7 @@ jobs:
               exit 1
             fi
             
-            # Create a deployment script with MongoDB verification
-            cat > deploy.sh << EOF
-            #!/bin/bash
-            
-            echo "=== Deployment Started at \$(date) ==="
+            echo "=== Deploying Application ==="
             
             # Kill existing process
             pkill -f 'Room_Management_System' || true
@@ -79,62 +75,66 @@ jobs:
             
             # Validate critical environment variables
             echo "=== Environment Variables Check ==="
-            echo "MONGO_URI: \${MONGO_URI:0:20}..."
-            echo "MAIL_USERNAME: \${MAIL_USERNAME}"
-            echo "AWS_REGION: \${AWS_REGION}"
-            echo "AWS_S3_BUCKET: \${AWS_S3_BUCKET}"
+            echo "MONGO_URI: ${MONGO_URI:0:20}..."
+            echo "MAIL_USERNAME: ${MAIL_USERNAME}"
+            echo "AWS_REGION: ${AWS_REGION}"
+            echo "AWS_S3_BUCKET: ${AWS_S3_BUCKET}"
             
             # Test MongoDB connection if tools are available
             if command -v mongosh >/dev/null 2>&1; then
               echo "=== Testing MongoDB Connection ==="
-              timeout 10 mongosh "\${MONGO_URI}" --eval "db.adminCommand('ping')" || echo "MongoDB connection test failed"
+              timeout 10 mongosh "${MONGO_URI}" --eval "db.adminCommand('ping')" || echo "MongoDB connection test failed"
             elif command -v mongo >/dev/null 2>&1; then
               echo "=== Testing MongoDB Connection ==="
-              timeout 10 mongo "\${MONGO_URI}" --eval "db.adminCommand('ping')" || echo "MongoDB connection test failed"
+              timeout 10 mongo "${MONGO_URI}" --eval "db.adminCommand('ping')" || echo "MongoDB connection test failed"
             else
               echo "MongoDB client not available, skipping connection test"
             fi
             
-            # Use the correct JAR path
-            JAR_PATH="${JAR_PATH}"
-            echo "Using JAR path: \$JAR_PATH"
+            echo "Using JAR path: ${JAR_PATH}"
             
-            # Check if JAR file exists
-            if [ ! -f "\$JAR_PATH" ]; then
-              echo "❌ JAR file not found at: \$JAR_PATH"
-              exit 1
-            fi
-            
+            # Start application with proper logging
             echo "=== Starting Application ==="
-            nohup java -jar "\$JAR_PATH" > output.log 2>&1 &
-            JAVA_PID=\$!
-            echo \$JAVA_PID > app.pid
+            nohup java -jar "${JAR_PATH}" > output.log 2>&1 &
+            JAVA_PID=$!
+            echo $JAVA_PID > app.pid
             
-            echo "Application started with PID: \$JAVA_PID"
-            echo "=== Deployment Script Completed ==="
-            EOF
+            echo "Application started with PID: $JAVA_PID"
+            echo "Waiting for application to fully start..."
             
-            chmod +x deploy.sh
-            ./deploy.sh &
+            # Wait for application to start and verify it's running
+            for i in {1..60}; do
+              if kill -0 $JAVA_PID 2>/dev/null; then
+                echo "Process is running (attempt $i/60)"
             
-            # Give the deployment script time to start
-            sleep 3
-            
-            # Check if deployment script ran
-            if [ -f app.pid ]; then
-              echo "✅ Deployment initiated successfully"
-              echo "Application PID: $(cat app.pid)"
-              echo "Checking initial logs..."
-              sleep 5
-              if [ -f output.log ]; then
-                echo "=== Initial Application Logs ==="
-                head -20 output.log
+                # Check if Spring Boot has started successfully
+                if [ -f output.log ]; then
+                  if grep -q "Started RoomManagementSystemApplication" output.log; then
+                    echo "✅ Application started successfully!"
+                    echo "=== Final Status ==="
+                    echo "PID: $JAVA_PID"
+                    echo "Recent logs:"
+                    tail -10 output.log
+                    exit 0
+                  elif grep -q "Error\|Exception\|Failed" output.log; then
+                    echo "❌ Application startup errors detected"
+                    echo "=== Error Logs ==="
+                    tail -20 output.log
+                    exit 1
+                  fi
+                fi
+              else
+                echo "❌ Process died unexpectedly"
+                if [ -f output.log ]; then
+                  echo "=== Error Logs ==="
+                  cat output.log
+                fi
+                exit 1
               fi
-            else
-              echo "❌ Deployment failed"
-              if [ -f output.log ]; then
-                echo "=== Error Logs ==="
-                cat output.log
-              fi
-              exit 1
-            fi
+              sleep 2
+            done
+            
+            echo "⚠️ Application startup timeout - but process may still be running"
+            echo "PID: $JAVA_PID"
+            echo "Current logs:"
+            tail -10 output.log
