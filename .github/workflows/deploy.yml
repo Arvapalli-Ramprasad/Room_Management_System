@@ -81,10 +81,21 @@ jobs:
             
             # Validate critical environment variables
             echo "=== Environment Variables Check ==="
-            echo "MONGO_URI: ${MONGO_URI:0:20}..."
+            echo "MONGO_URI: ${MONGO_URI:0:50}..."
             echo "MAIL_USERNAME: ${MAIL_USERNAME}"
             echo "AWS_REGION: ${AWS_REGION}"
             echo "AWS_S3_BUCKET: ${AWS_S3_BUCKET}"
+            
+            # Validate MongoDB URI format
+            if [[ ! "${MONGO_URI}" =~ ^mongodb://|^mongodb\+srv:// ]]; then
+              echo "❌ INVALID MONGODB URI FORMAT!"
+              echo "Current MONGO_URI starts with: ${MONGO_URI:0:20}..."
+              echo "MONGO_URI must start with 'mongodb://' or 'mongodb+srv://'"
+              echo "Please check your MONGO_URI secret in GitHub repository settings"
+              exit 1
+            else
+              echo "✅ MongoDB URI format is valid"
+            fi
             
             # Test MongoDB connection if tools are available
             if command -v mongosh >/dev/null 2>&1; then
