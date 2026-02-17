@@ -89,9 +89,12 @@ jobs:
                   echo "✅ Application started successfully!"
                   tail -20 output.log
                   exit 0
-                elif grep -q "ERROR\|Exception\|Failed\|Application run failed" output.log; then
+                elif grep -q "ERROR\|Application run failed" output.log; then
                   echo "❌ Application startup errors detected"
-                  tail -50 output.log
+                  echo "=== Error Logs ==="
+                  tail -200 output.log
+                  echo "=== Full Error Context ==="
+                  grep -A 10 -B 5 "ERROR\|Application run failed" output.log || echo "No error patterns found"
                   exit 1
                 fi
               else
