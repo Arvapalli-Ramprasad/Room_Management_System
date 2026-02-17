@@ -82,20 +82,29 @@ jobs:
             echo $JAVA_PID > app.pid
             echo "Application started with PID: $JAVA_PID"
 
-            # Wait for app to start
-            for i in {1..90}; do
+            # Wait for app to start - increased attempts and better detection
+            for i in {1..120}; do
               if kill -0 $JAVA_PID 2>/dev/null; then
                 if grep -q "Started RoomManagementSystemApplication" output.log; then
                   echo "✅ Application started successfully!"
+                  echo "=== Final Status ==="
+                  echo "PID: $JAVA_PID"
+                  echo "Recent logs:"
                   tail -20 output.log
                   exit 0
                 elif grep -q "ERROR\|Application run failed" output.log; then
                   echo "❌ Application startup errors detected"
                   echo "=== Error Logs ==="
-                  tail -200 output.log
+                  tail -50 output.log
                   echo "=== Full Error Context ==="
                   grep -A 10 -B 5 "ERROR\|Application run failed" output.log || echo "No error patterns found"
                   exit 1
+                fi
+            
+                # Show progress every 15 attempts
+                if [ $((i % 15)) -eq 0 ]; then
+                  echo "=== Current Logs (attempt $i/120) ==="
+                  tail -10 output.log
                 fi
               else
                 echo "❌ Process died unexpectedly"
